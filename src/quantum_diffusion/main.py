@@ -1,6 +1,5 @@
 import inspect
 import pathlib
-import warnings
 import webbrowser
 from typing import Literal
 
@@ -8,6 +7,7 @@ import click
 import matplotlib.pyplot as plt
 import torch
 import tqdm
+from loguru import logger
 
 from quantum_diffusion import data, models, nn, noise
 
@@ -27,7 +27,7 @@ def train(
     lr: float,
     save_path: pathlib.Path,
 ):
-    print("Training model")
+    logger.info("Training model")
     diff.train()
 
     pbar = tqdm.tqdm(total=epochs)
@@ -55,7 +55,7 @@ def train(
 
 
 def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
-    print("Testing model")
+    logger.info("Testing model")
     diff.eval()
     first_x = torch.rand(15, 1, 8, 8) * 0.5 + 0.75
     outp = diff.sample(first_x=first_x, n_iters=tau * 2, show_progress=True)
@@ -178,9 +178,9 @@ def main(
         torch.manual_seed(seed)
 
     if device == "cuda":
-        warnings.warn("CUDA performance is worse than CPU for most models.")
+        logger.warning("CUDA performance is worse than CPU for most models.")
         if not torch.cuda.is_available():
-            warnings.warn("CUDA is not available, using CPU.")
+            logger.warning("CUDA is not available, using CPU.")
             device = "cpu"
 
     x_train, y_train, height, width = eval(f"data.{data}")(
@@ -225,7 +225,7 @@ def main(
                 diff.load_state_dict(torch.load(lp))
 
         except FileNotFoundError:
-            print("Failed to load model")
+            logger.error("Failed to load model")
             run_train = True
 
     if load_path is None or run_train:
