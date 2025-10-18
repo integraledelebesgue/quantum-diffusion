@@ -220,7 +220,7 @@ def main(
     run_train = False
 
     if load_path is not None:
-        print("Loading model")
+        # print("Loading model")
         try:
             if load_path.suffix == ".pt":
                 diff.load_state_dict(torch.load(load_path))
