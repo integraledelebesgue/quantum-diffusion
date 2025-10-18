@@ -242,9 +242,9 @@ class QDense4StatesUndirected(torch.nn.Module):
         return qml.state()  # type: ignore
 
     def forward(self, x: torch.Tensor, reps=1, other_node=None) -> torch.Tensor:
-        assert (
-            x.ndim == 4
-        ), f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"
+        assert x.ndim == 4, (
+            f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"
+        )
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         old_norm = torch.norm(x, dim=-1, keepdim=True)
         x = x / old_norm
@@ -258,12 +258,12 @@ class QDense4StatesUndirected(torch.nn.Module):
         return x
 
     def __repr__(self) -> str:
-        return (
-            f"QDense4StatesUndirected(qdepth={self.qdepth}, wires={self.wires})"
-        )
+        return f"QDense4StatesUndirected(qdepth={self.qdepth}, wires={self.wires})"
 
     def save_name(self) -> str:
-        return f"_qdense_undirected_for_states_d{self.qdepth}_w{self.width}_h{self.height}"
+        return (
+            f"_qdense_undirected_for_states_d{self.qdepth}_w{self.width}_h{self.height}"
+        )
 
     def sample(self, x: torch.Tensor, num_repeats: int, **kwargs) -> torch.Tensor:
         return self.forward(x, reps=num_repeats).abs().detach().cpu()
@@ -271,9 +271,9 @@ class QDense4StatesUndirected(torch.nn.Module):
     def sample_on_device(
         self, x: torch.Tensor, num_repeats: int, device: qml.Device = None
     ) -> torch.Tensor:
-        assert (
-            x.dim() == 2
-        ), f"Input must be 2D tensor (batch, pixels), but is {x.shape}"
+        assert x.dim() == 2, (
+            f"Input must be 2D tensor (batch, pixels), but is {x.shape}"
+        )
 
         def _sampling_circuit(inp, reps):
             # qml.QubitStateVector(state=inp, wires=range(self.wires))
@@ -358,9 +358,9 @@ class QDense4StatesAncilla(torch.nn.Module):
         return qml.state()  # type: ignore
 
     def forward(self, x: torch.Tensor, y=None) -> torch.Tensor:
-        assert (
-            x.ndim == 4
-        ), f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"
+        assert x.ndim == 4, (
+            f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"
+        )
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         old_norm = torch.norm(x, dim=-1, keepdim=True)
         x = x / old_norm
