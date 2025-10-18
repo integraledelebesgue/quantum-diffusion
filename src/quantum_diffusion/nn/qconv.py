@@ -130,7 +130,7 @@ class _QConv2d_FAST(torch.nn.Module):
         super().train(mode)
 
         if not mode and self.sample_qnode is None:
-            print("Creating sample qnode")
+            # print("Creating sample qnode")
 
             def _sub_circuit():
                 qml.StronglyEntanglingLayers(

@@ -1,6 +1,6 @@
 import math
 import warnings
-from typing import Tuple
+from typing import Any, Tuple
 
 import circuits
 import einops
@@ -270,7 +270,10 @@ class QDense4StatesUndirected(torch.nn.Module):
         return self.forward(x, reps=num_repeats).abs().detach().cpu()
 
     def sample_on_device(
-        self, x: torch.Tensor, num_repeats: int, device: qml.Device = None
+        self,
+        x: torch.Tensor,
+        num_repeats: int,
+        device: Any = None,
     ) -> torch.Tensor:
         assert x.dim() == 2, (
             f"Input must be 2D tensor (batch, pixels), but is {x.shape}"
