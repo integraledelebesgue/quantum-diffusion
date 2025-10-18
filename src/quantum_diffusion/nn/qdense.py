@@ -21,7 +21,7 @@ class QDenseUndirected(torch.nn.Module):
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height))
-        self.qdev = qml.device("default.qubit.torch", wires=self.wires)
+        self.qdev = qml.device("default.qubit", wires=self.wires)
         weight_shape = qml.StronglyEntanglingLayers.shape(self.qdepth, self.wires)
         self.weights = torch.nn.Parameter(
             torch.randn(weight_shape, requires_grad=True) * 0.4
@@ -77,7 +77,7 @@ class QDense2Undirected(torch.nn.Module):
         self.pixels = self.width * self.height
         self.entangling_layer = entangling_layer
         self.wires = math.ceil(math.log2(self.width * self.height)) + 1
-        self.qdev = qml.device("default.qubit.torch", wires=self.wires)
+        self.qdev = qml.device("default.qubit", wires=self.wires)
         weight_shape = self.entangling_layer.shape(self.qdepth, self.wires)
         self.weights = torch.nn.Parameter(
             torch.randn(weight_shape, requires_grad=True) * 0.4
@@ -158,7 +158,7 @@ class QDenseDirectedReupload(torch.nn.Module):
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height)) + 1
-        self.qdev = qml.device("default.qubit.torch", wires=self.wires)
+        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.num_reuploads = num_reuploads
 
         self.weights = torch.nn.ParameterList()
@@ -222,7 +222,7 @@ class QDense4StatesUndirected(torch.nn.Module):
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height))
-        self.qdev = qml.device("default.qubit.torch", wires=self.wires)
+        self.qdev = qml.device("default.qubit", wires=self.wires)
         weight_shape = qml.StronglyEntanglingLayers.shape(qdepth, self.wires)
         self.weights = torch.nn.Parameter(
             torch.randn(weight_shape, requires_grad=True) * 0.4
@@ -332,7 +332,7 @@ class QDense4StatesAncilla(torch.nn.Module):
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height)) + 1
-        self.qdev = qml.device("default.qubit.torch", wires=self.wires)
+        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.num_reuploads = num_reuploads
         self.weights = torch.nn.ParameterList()
         for i in np.array_split(np.arange(qdepth), num_reuploads):

@@ -9,7 +9,7 @@ import torch
 class CircuitFactory:
     def __init__(self, wires: int) -> None:
         self.wires = wires
-        self.dev = qml.device("default.qubit.torch", wires=wires)
+        self.dev = qml.device("default.qubit", wires=wires)
 
     def classic_circuit(self, label, inp, weights):
         qml.AmplitudeEmbedding(
@@ -123,7 +123,7 @@ class CircuitFactory:
 
         return qml.QNode(
             func=__circuit,
-            device=qml.device("default.qubit.torch", wires=self.wires + num_repeats),
+            device=qml.device("default.qubit", wires=self.wires + num_repeats),
             interface="torch",
             diff_method="backprop",
             **qnode_kwargs,
