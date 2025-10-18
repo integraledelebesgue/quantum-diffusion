@@ -1618,6 +1618,7 @@ name = "quantum-diffusion"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "click" },
     { name = "einops" },
     { name = "kiwisolver" },
     { name = "matplotlib" },
@@ -1642,6 +1643,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click", specifier = ">=8.2.1" },
     { name = "einops", specifier = ">=0.8.1" },
     { name = "kiwisolver", specifier = ">=1.4.8" },
     { name = "matplotlib", specifier = ">=3.10.3" },
