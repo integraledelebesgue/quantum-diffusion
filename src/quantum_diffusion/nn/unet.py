@@ -1,9 +1,7 @@
 import torch
-import warnings
-import einops
-import math
-from .utils import autocrop, autopad, get_label_embedding
+
 from .qconv import QConv2d
+from .utils import autopad, get_label_embedding
 
 
 def Conv2d(**kwargs):

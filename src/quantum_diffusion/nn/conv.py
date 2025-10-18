@@ -1,6 +1,8 @@
 from __future__ import annotations
-import torch
+
 import einops
+import torch
+
 from .utils import get_label_embedding
 
 
