@@ -1,9 +1,10 @@
-import torch
 import math
 import warnings
-import pennylane as qml
+
 import einops
+import pennylane as qml
 import qw_map
+import torch
 
 
 class _QConv2d_FAST(torch.nn.Module):

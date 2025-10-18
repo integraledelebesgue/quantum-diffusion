@@ -1,12 +1,13 @@
-from typing import Tuple
-import torch
-import pennylane as qml
 import math
-import qw_map
+import warnings
+from typing import Tuple
+
+import circuits
 import einops
 import numpy as np
-import warnings
-import circuits
+import pennylane as qml
+import qw_map
+import torch
 
 
 class QDenseUndirected(torch.nn.Module):

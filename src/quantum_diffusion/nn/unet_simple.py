@@ -1,6 +1,7 @@
-from .unet import DownBlock, UpBlock, UNetUndirected, get_label_embedding
 import torch
+
 from .qconv import QConv2d
+from .unet import DownBlock, UNetUndirected, UpBlock, get_label_embedding
 
 
 class DownBlockS(DownBlock):

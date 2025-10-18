@@ -1,8 +1,9 @@
-import pennylane as qml
 import typing
 import warnings
-import torch
+
+import pennylane as qml
 import qw_map
+import torch
 
 
 class CircuitFactory:

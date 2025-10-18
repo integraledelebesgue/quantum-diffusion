@@ -1,5 +1,5 @@
-import torch
 import einops
+import torch
 
 
 class DenseUndirected(torch.nn.Module):

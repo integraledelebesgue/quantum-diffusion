@@ -1,7 +1,8 @@
-import warnings
-import torch
 import math
+import warnings
+
 import einops
+import torch
 
 
 def autocrop(x, y):
@@ -112,8 +113,8 @@ def repeat_qasm(
 
 
 def sample_from_qiskit(qasm_str, backend="statevector_simulator", shots=None):
-    from qiskit import QuantumCircuit, Aer, execute
     import torch
+    from qiskit import Aer, QuantumCircuit, execute
 
     qc = QuantumCircuit.from_qasm_str(qasm_str)
     backend = Aer.get_backend(backend)
