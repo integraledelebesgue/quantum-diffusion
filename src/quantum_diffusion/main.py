@@ -1,16 +1,15 @@
-import argparse
 import inspect
 import pathlib
-import sys
 import warnings
 import webbrowser
-from turtle import width
+from typing import Literal
 
+import click
 import matplotlib.pyplot as plt
 import torch
 import tqdm
 
-from . import data, models, nn, noise
+from quantum_diffusion import data, models, nn, noise
 
 all_nn = [name for name, obj in inspect.getmembers(nn) if inspect.isclass(obj)]
 all_ds = [
@@ -20,150 +19,220 @@ all_ds = [
 ]
 
 
-def parse_args(args: list[str]):
-    parser = argparse.ArgumentParser(description="Quantum Denoising Diffusion Model")
-    parser.add_argument(
-        "--data",
-        type=str,
-        default="mnist_8x8",
-        help=f"Dataset to use. Available datasets: {', '.join(all_ds)}.",
-    )
-    parser.add_argument(
-        "--n_classes",
-        type=int,
-        default=2,
-        help="Number of label classes to use. Smaller models perform better on a smaller number of classes.",
-    )
-    parser.add_argument(
-        "--target", type=str, default="noise", help="Generate noise or data."
-    )
-    parser.add_argument(
-        "--save-path", type=str, default="results", help="Path to save results."
-    )
-    parser.add_argument(
-        "--seed", type=int, default=None, help="Random seed for reproducibility."
-    )
-    parser.add_argument(
-        "--load-path",
-        type=str,
-        default=None,
-        help="Load model from path. If no path is given, train a new model. The trained model will be saved in --save-path.",
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        default=["QDenseUndirected", "55", "8"],
-        nargs="+",
-        help=f"Model name and parameters. Models are defined in the nn module, including {', '.join(all_nn)}.",
-    )
-    parser.add_argument(
-        "--guidance", type=bool, default=False, help="Toggle guidance. Default: False"
-    )
-    parser.add_argument(
-        "--device",
-        type=str,
-        default="cpu",
-        choices=["cpu", "cuda"],
-        help="Device to use.",
-    )
-    parser.add_argument(
-        "--tau",
-        type=int,
-        default=10,
-        help="Number of iterations. Models perform better with more iterations on higher resolution images, for low-res, tau=10 suffices.",
-    )
-    parser.add_argument(
-        "--ds-size",
-        type=int,
-        default=100,
-        help="Dataset size. 80%% is used for training.",
-    )
-    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
-    parser.add_argument("--epochs", type=int, default=10000, help="Number of epochs.")
-    return parser.parse_args(args)
-
-
-def train():
+def train(
+    diff: models.Diffusion,
+    ds: torch.utils.data.DataLoader[tuple[torch.Tensor, ...]],
+    epochs: int,
+    tau: int,
+    lr: float,
+    save_path: pathlib.Path,
+):
     print("Training model")
     diff.train()
-    pbar = tqdm.tqdm(total=args.epochs)
-    opt = torch.optim.Adam(diff.parameters(), lr=args.lr)
-    for epoch in range(args.epochs):
+
+    pbar = tqdm.tqdm(total=epochs)
+    opt = torch.optim.Adam(diff.parameters(), lr=lr)
+
+    for _ in range(epochs):
         epoch_loss = 0.0
+
         for x, y in ds:
             opt.zero_grad()
-            batch_loss, _ = diff(x=x, y=y, T=args.tau, verbose=True)
+            batch_loss, _ = diff(x=x, y=y, T=tau, verbose=True)
             epoch_loss += batch_loss.mean()
             opt.step()
+
         pbar.set_postfix({"loss": epoch_loss.item()})  # type: ignore
         pbar.update(1)
+
     pbar.close()
-    sp = pathlib.Path(args.save_path) / f"{diff.save_name()}.pt"
+    sp = save_path / f"{diff.save_name()}.pt"
+
     if not sp.parent.exists():
         sp.parent.mkdir(parents=True)
+
     torch.save(diff.state_dict(), sp)
 
 
-def test():
+def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
     print("Testing model")
     diff.eval()
     first_x = torch.rand(15, 1, 8, 8) * 0.5 + 0.75
-    outp = diff.sample(first_x=first_x, n_iters=args.tau * 2, show_progress=True)
+    outp = diff.sample(first_x=first_x, n_iters=tau * 2, show_progress=True)
     plt.imshow(outp.cpu(), cmap="gray")
     plt.axis("off")
-    sp = pathlib.Path(args.save_path) / f"{diff.save_name()}.png"
+    sp = save_path / f"{diff.save_name()}.png"
     plt.savefig(sp)
     webbrowser.open(sp.absolute().as_uri())
 
 
-if __name__ == "__main__":
-    args = parse_args(sys.argv[1:])
-    if args.seed is not None:
-        torch.manual_seed(args.seed)
-    if args.device == "cuda":
+@click.command(help="Quantum Denoising Diffusion Model CLI")
+@click.option(
+    "--data",
+    type=str,
+    default="mnist_8x8",
+    show_default=True,
+    help=f"Dataset to use. Available datasets: {', '.join(all_ds)}.",
+)
+@click.option(
+    "--n-classes",
+    type=int,
+    default=2,
+    show_default=True,
+    help="Number of label classes to use. Smaller models perform better on a smaller number of classes.",
+)
+@click.option(
+    "--target",
+    type=click.Choice(["noise", "data"], case_sensitive=False),
+    default="noise",
+    show_default=True,
+    help="Generate 'noise' or 'data'.",
+)
+@click.option(
+    "--save-path",
+    type=pathlib.Path,
+    default="results",
+    show_default=True,
+    help="Path to save results.",
+)
+@click.option(
+    "--seed",
+    type=int,
+    default=None,
+    help="Random seed for reproducibility.",
+)
+@click.option(
+    "--load-path",
+    type=pathlib.Path,
+    default=None,
+    help="Path to load model from. If not provided, a new model will be trained and saved in --save-path.",
+)
+@click.option(
+    "--model",
+    multiple=True,
+    default=("QDenseUndirected", "55", "8"),
+    show_default=True,
+    help=(
+        f"Model name and parameters. Specify multiple values separated by spaces.\n"
+        f"Example: --model QDenseUndirected 55 8\n"
+        f"Available models: {', '.join(all_nn)}."
+    ),
+)
+@click.option(
+    "--guidance/--no-guidance",
+    default=False,
+    show_default=True,
+    help="Toggle guidance on or off.",
+)
+@click.option(
+    "--device",
+    default="cpu",
+    type=click.Choice(["cpu", "cuda", "mps"], case_sensitive=False),
+    show_default=True,
+    help="Device to use.",
+)
+@click.option(
+    "--tau",
+    type=int,
+    default=10,
+    show_default=True,
+    help="Number of iterations (tau). Higher values work better for higher resolution images.",
+)
+@click.option(
+    "--ds-size",
+    type=int,
+    default=100,
+    show_default=True,
+    help="Dataset size (80% of this will be used for training).",
+)
+@click.option(
+    "--lr",
+    type=float,
+    default=1e-4,
+    show_default=True,
+    help="Learning rate.",
+)
+@click.option(
+    "--epochs",
+    type=int,
+    default=10000,
+    show_default=True,
+    help="Number of training epochs.",
+)
+def main(
+    data: str,
+    n_classes: int,
+    target: Literal["noise", "data"],
+    save_path: pathlib.Path,
+    seed: int | None,
+    load_path: pathlib.Path | None,
+    model: tuple[str, ...],
+    guidance: bool,
+    device: Literal["cpu", "cuda", "mps"],
+    tau: int,
+    ds_size: int,
+    lr: float,
+    epochs: int,
+):
+    if seed is not None:
+        torch.manual_seed(seed)
+
+    if device == "cuda":
         warnings.warn("CUDA performance is worse than CPU for most models.")
         if not torch.cuda.is_available():
             warnings.warn("CUDA is not available, using CPU.")
-            args.device = "cpu"
+            device = "cpu"
 
-    x_train, y_train, height, width = eval(f"data.{args.data}")(
-        n_classes=args.n_classes, ds_size=args.ds_size
+    x_train, y_train, height, width = eval(f"data.{data}")(
+        n_classes=n_classes,
+        ds_size=ds_size,
     )
-    x_train = x_train.to(args.device)
-    y_train = y_train.to(args.device)
+
+    x_train = x_train.to(device)
+    y_train = y_train.to(device)
+
     train_cutoff = int(len(x_train) * 0.8)
+
     x_train, x_test = x_train[:train_cutoff], x_train[train_cutoff:]
     y_train, y_test = y_train[:train_cutoff], y_train[train_cutoff:]
+
     ds = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(x_train, y_train),
         batch_size=10,
         shuffle=False,
     )
 
-    net = eval(f"nn.{args.model[0]}")(*[int(a) for a in args.model[1:]])
+    net = eval(f"nn.{model[0]}")(*[int(a) for a in model[1:]])
+
     diff = models.Diffusion(
         net=net,
         shape=(height, width),
         noise_f=noise.add_normal_noise_multiple,
-        prediction_goal=args.target,
-        directed=args.guidance,
+        prediction_goal=target,
+        directed=guidance,
         loss=torch.nn.MSELoss(),
-    ).to(args.device)
+    ).to(device)
 
     run_train = False
-    if args.load_path is not None:
+
+    if load_path is not None:
         print("Loading model")
         try:
-            if args.load_path.endswith(".pt"):
-                diff.load_state_dict(torch.load(args.load_path))
+            if load_path.suffix == ".pt":
+                diff.load_state_dict(torch.load(load_path))
             else:
-                lp = pathlib.Path(args.load_path) / f"{diff.save_name()}.pt"
+                lp = load_path / f"{diff.save_name()}.pt"
                 diff.load_state_dict(torch.load(lp))
+
         except FileNotFoundError:
             print("Failed to load model")
             run_train = True
 
-    if args.load_path is None or run_train:
-        train()
+    if load_path is None or run_train:
+        train(diff, ds, epochs, tau, lr, save_path)
 
-    test()
+    test(diff, tau, save_path)
+
+
+if __name__ == "__main__":
+    main()
