@@ -1,3 +1,4 @@
+import pathlib
 from typing import Literal
 
 import einops
@@ -17,6 +18,7 @@ Dataset = Literal[
 
 def get_by_name(
     dataset: Dataset,
+    location: pathlib.Path,
     n_classes: int,
     ds_size: int,
 ) -> tuple[torch.Tensor, torch.Tensor, int, int]:
@@ -25,16 +27,16 @@ def get_by_name(
             return mnist_8x8(n_classes, ds_size)
 
         case "mnist_28x28":
-            return mnist_28x28(n_classes, ds_size)
+            return mnist_28x28(location, n_classes, ds_size)
 
         case "mnist_32x32":
-            return mnist_32x32(n_classes, ds_size)
+            return mnist_32x32(location, n_classes, ds_size)
 
         case "cifar10_32x32":
-            return cifar10_32x32(n_classes, ds_size)
+            return cifar10_32x32(location, n_classes, ds_size)
 
         case "fashion_28x28":
-            return fashion_28x28(n_classes, ds_size)
+            return fashion_28x28(location, n_classes, ds_size)
 
 
 def __normalize_labels(labels: torch.Tensor) -> torch.Tensor:
@@ -56,11 +58,14 @@ def mnist_8x8(
 
 
 def mnist_28x28(
+    location: pathlib.Path,
     n_classes: int = 10,
     ds_size: int = 100,
 ) -> tuple[torch.Tensor, torch.Tensor, int, int]:
     ds = torchvision.datasets.MNIST(
-        root="~/mnist", download=True, transform=T.ToTensor()
+        root=location,
+        download=True,
+        transform=T.ToTensor(),
     )
     idx = ds.targets < n_classes
     ds.data = ds.data[idx]
@@ -78,6 +83,7 @@ def mnist_28x28(
 
 
 def mnist_32x32(
+    location: pathlib.Path,
     n_classes: int = 10,
     ds_size: int = 100,
 ) -> tuple[torch.Tensor, torch.Tensor, int, int]:
@@ -87,7 +93,7 @@ def mnist_32x32(
             T.Resize((32, 32)),
         ]
     )
-    ds = torchvision.datasets.MNIST(root="~/mnist", download=True, transform=tra)
+    ds = torchvision.datasets.MNIST(root=location, download=True, transform=tra)
     idx = ds.targets < n_classes
     ds.data = ds.data[idx]
     ds.targets = ds.targets[idx]
@@ -104,6 +110,7 @@ def mnist_32x32(
 
 
 def cifar10_32x32(
+    location: pathlib.Path,
     n_classes: int = 10,
     ds_size: int = 100,
 ) -> tuple[torch.Tensor, torch.Tensor, int, int]:
@@ -115,7 +122,9 @@ def cifar10_32x32(
         ]
     )
     ds = torchvision.datasets.CIFAR10(
-        root="~/cifar", download=True, transform=transformation
+        root=location,
+        download=True,
+        transform=transformation,
     )
     ds.targets = torch.tensor(ds.targets)
     idx = ds.targets < n_classes
@@ -133,11 +142,14 @@ def cifar10_32x32(
 
 
 def fashion_28x28(
+    location: pathlib.Path,
     n_classes: int = 10,
     ds_size: int = 100,
 ) -> tuple[torch.Tensor, torch.Tensor, int, int]:
     ds = torchvision.datasets.FashionMNIST(
-        root="~/fashion", download=True, transform=T.ToTensor()
+        root=location,
+        download=True,
+        transform=T.ToTensor(),
     )
     ds.targets = torch.tensor(ds.targets)
     idx = ds.targets < n_classes
