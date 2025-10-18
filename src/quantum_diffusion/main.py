@@ -1,6 +1,5 @@
 import pathlib
 import webbrowser
-from typing import Literal
 
 import click
 import matplotlib.pyplot as plt
@@ -61,7 +60,7 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
 @click.command(help="Quantum Denoising Diffusion Model CLI")
 @click.option(
     "--dataset",
-    type=data.Dataset,
+    type=str,
     default="mnist_8x8",
     show_default=True,
     help="Dataset to use",
@@ -106,16 +105,15 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
 )
 @click.option(
     "--model",
-    type=nn.Model,
+    type=str,
     default="QDenseUndirected",
     show_default=True,
     help=("Model name"),
 )
 @click.option(
     "--model-parameters",
-    type=str,
+    type=tuple[str, ...],
     default=("55", "8"),
-    nargs=-1,
     help="Constructor parameters for the model",
 )
 @click.option(
@@ -160,17 +158,17 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
     help="Number of training epochs.",
 )
 def main(
-    dataset: data.Dataset,
+    dataset: str,
     dataset_location: pathlib.Path,
     n_classes: int,
-    target: Literal["noise", "data"],
+    target: str,
     save_path: pathlib.Path,
     seed: int | None,
     load_path: pathlib.Path | None,
-    model: nn.Model,
+    model: str,
     model_parameters: tuple[str, ...],
     guidance: bool,
-    device: Literal["cpu", "cuda", "mps"],
+    device: str,
     tau: int,
     ds_size: int,
     lr: float,
