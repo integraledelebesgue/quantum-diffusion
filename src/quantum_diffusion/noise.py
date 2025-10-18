@@ -3,7 +3,7 @@ Different methods of adding noise to data
 """
 
 import torch
-from einops import rearrange, repeat, reduce
+from einops import rearrange, reduce, repeat
 
 
 def l1_norm(data):
@@ -39,10 +39,10 @@ def normalize_mean(target_data, inp):
 
 def add_uniform_noise_iteratively(data, tau, decay_mod=1.0):
     """
-    Add noise to data iteratively. 
+    Add noise to data iteratively.
     In the returned tensor, the first row is the original data, \
     the second row is the first row with additional noise, \
-    the third row is the second row with additional noise, etc. 
+    the third row is the second row with additional noise, etc.
     """
     if data.dim() == 1:
         data = data.unsqueeze(0)

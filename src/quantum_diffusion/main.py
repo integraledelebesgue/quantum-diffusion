@@ -1,18 +1,16 @@
+import argparse
+import inspect
+import pathlib
+import sys
+import warnings
+import webbrowser
 from turtle import width
+
 import matplotlib.pyplot as plt
 import torch
-import einops
-import data
-import noise
-import models
-import nn
-import argparse
-import sys
-import inspect
-import warnings
 import tqdm
-import pathlib
-import webbrowser
+
+from . import data, models, nn, noise
 
 all_nn = [name for name, obj in inspect.getmembers(nn) if inspect.isclass(obj)]
 all_ds = [
@@ -22,7 +20,7 @@ all_ds = [
 ]
 
 
-def parse_args(args):
+def parse_args(args: list[str]):
     parser = argparse.ArgumentParser(description="Quantum Denoising Diffusion Model")
     parser.add_argument(
         "--data",
@@ -34,8 +32,7 @@ def parse_args(args):
         "--n_classes",
         type=int,
         default=2,
-        help="Number of label classes to use. \
-                        Smaller models perform better on a smaller number of classes.",
+        help="Number of label classes to use. Smaller models perform better on a smaller number of classes.",
     )
     parser.add_argument(
         "--target", type=str, default="noise", help="Generate noise or data."
@@ -50,17 +47,14 @@ def parse_args(args):
         "--load-path",
         type=str,
         default=None,
-        help="Load model from path. \
-            If no path is given, train a new model.\
-            The trained model will be saved in --save-path.",
+        help="Load model from path. If no path is given, train a new model. The trained model will be saved in --save-path.",
     )
     parser.add_argument(
         "--model",
         type=str,
         default=["QDenseUndirected", "55", "8"],
         nargs="+",
-        help=f"Model name and parameters. \
-            Models are defined in the nn module, including {', '.join(all_nn)}.",
+        help=f"Model name and parameters. Models are defined in the nn module, including {', '.join(all_nn)}.",
     )
     parser.add_argument(
         "--guidance", type=bool, default=False, help="Toggle guidance. Default: False"
@@ -76,9 +70,7 @@ def parse_args(args):
         "--tau",
         type=int,
         default=10,
-        help="Number of iterations. \
-            Models perform better with more iterations on higher resolution images, \
-            for low-res, tau=10 suffices.",
+        help="Number of iterations. Models perform better with more iterations on higher resolution images, for low-res, tau=10 suffices.",
     )
     parser.add_argument(
         "--ds-size",

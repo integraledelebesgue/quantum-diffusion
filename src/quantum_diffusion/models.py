@@ -1,7 +1,8 @@
-import torch
-import einops
 import typing
 import warnings
+
+import einops
+import torch
 import tqdm
 
 
@@ -25,9 +26,9 @@ class Diffusion(torch.nn.Module):
         super().__init__()
         self.net = net
         if not skip_name_test:
-            assert (
-                net._get_name().lower().__contains__("directed")
-            ), f"Unknown network type {net._get_name()}"
+            assert net._get_name().lower().__contains__("directed"), (
+                f"Unknown network type {net._get_name()}"
+            )
             if directed and net._get_name().lower().__contains__("undirected"):
                 raise ValueError(
                     f"Directed model cannot be used with undirected network {net._get_name()}"

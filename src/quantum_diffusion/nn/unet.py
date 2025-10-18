@@ -145,9 +145,7 @@ class UNetUndirected(torch.nn.Module):
 
         up_blocks = []
         for i in range(self.depth - 1):
-            in_channel = (
-                out_channel
-            )  # set the input channel to the output channel of the previous layer
+            in_channel = out_channel  # set the input channel to the output channel of the previous layer
             out_channel = out_channel // 2
             up_blocks.append(UpBlock(in_channel, out_channel, qdepth=qdepth))
 

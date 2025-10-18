@@ -57,9 +57,9 @@ def __get_label_embedding_1(labels: torch.Tensor, width: int, height: int):
 
 def __get_label_embedding_2(labels: torch.Tensor, width: int, height: int):
     """Returns a mask for the labels"""
-    assert (
-        labels.unique().shape[0] == 2 and labels.min() == 0 and labels.max() == 1
-    ), "Labels must be binary"
+    assert labels.unique().shape[0] == 2 and labels.min() == 0 and labels.max() == 1, (
+        "Labels must be binary"
+    )
     batch = labels.shape[0]
     mask = torch.zeros((batch, 1, width, height), device=labels.device)
     mask[
@@ -101,7 +101,7 @@ def repeat_qasm(
     measurements = "\n".join(qasm_[-wires:])
     qasm_ = qasm_[4 : -wires - 1]
     if ancilla:
-        qasm_ = [f"reset q[{wires-1}];"] + ["barrier q;"] + qasm_
+        qasm_ = [f"reset q[{wires - 1}];"] + ["barrier q;"] + qasm_
     qasm_ = qasm_ + ["barrier q;"]
     qasm_mult = []
     for _ in range(reps):
