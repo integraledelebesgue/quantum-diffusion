@@ -67,6 +67,11 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
     help="Dataset to use",
 )
 @click.option(
+    "--dataset-location",
+    type=pathlib.Path,
+    help="Location to download the dataset to",
+)
+@click.option(
     "--n-classes",
     type=int,
     default=2,
@@ -156,6 +161,7 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
 )
 def main(
     dataset: data.Dataset,
+    dataset_location: pathlib.Path,
     n_classes: int,
     target: Literal["noise", "data"],
     save_path: pathlib.Path,
@@ -169,7 +175,7 @@ def main(
     ds_size: int,
     lr: float,
     epochs: int,
-):
+) -> None:
     if seed is not None:
         torch.manual_seed(seed)
 
@@ -179,7 +185,12 @@ def main(
             logger.warning("CUDA is not available, using CPU.")
             device = "cpu"
 
-    x_train, y_train, height, width = data.get_by_name(dataset, n_classes, ds_size)
+    x_train, y_train, height, width = data.get_by_name(
+        dataset,
+        dataset_location,
+        n_classes,
+        ds_size,
+    )
 
     x_train = x_train.to(device)
     y_train = y_train.to(device)
