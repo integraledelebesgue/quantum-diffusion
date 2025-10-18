@@ -1,4 +1,3 @@
-import inspect
 import pathlib
 import webbrowser
 from typing import Literal
@@ -10,13 +9,6 @@ import tqdm
 from loguru import logger
 
 from quantum_diffusion import data, models, nn, noise
-
-all_nn = [name for name, obj in inspect.getmembers(nn) if inspect.isclass(obj)]
-all_ds = [
-    name
-    for name, obj in inspect.getmembers(data)
-    if inspect.isfunction(obj) and not name.startswith("_")
-]
 
 
 def train(
@@ -68,11 +60,11 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
 
 @click.command(help="Quantum Denoising Diffusion Model CLI")
 @click.option(
-    "--data",
-    type=str,
+    "--dataset",
+    type=data.Dataset,
     default="mnist_8x8",
     show_default=True,
-    help=f"Dataset to use. Available datasets: {', '.join(all_ds)}.",
+    help="Dataset to use",
 )
 @click.option(
     "--n-classes",
@@ -109,14 +101,17 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
 )
 @click.option(
     "--model",
-    multiple=True,
-    default=("QDenseUndirected", "55", "8"),
+    type=nn.Model,
+    default="QDenseUndirected",
     show_default=True,
-    help=(
-        f"Model name and parameters. Specify multiple values separated by spaces.\n"
-        f"Example: --model QDenseUndirected 55 8\n"
-        f"Available models: {', '.join(all_nn)}."
-    ),
+    help=("Model name"),
+)
+@click.option(
+    "--model-parameters",
+    type=str,
+    default=("55", "8"),
+    nargs=-1,
+    help="Constructor parameters for the model",
 )
 @click.option(
     "--guidance/--no-guidance",
@@ -160,13 +155,14 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
     help="Number of training epochs.",
 )
 def main(
-    data: str,
+    dataset: data.Dataset,
     n_classes: int,
     target: Literal["noise", "data"],
     save_path: pathlib.Path,
     seed: int | None,
     load_path: pathlib.Path | None,
-    model: tuple[str, ...],
+    model: nn.Model,
+    model_parameters: tuple[str, ...],
     guidance: bool,
     device: Literal["cpu", "cuda", "mps"],
     tau: int,
@@ -183,10 +179,7 @@ def main(
             logger.warning("CUDA is not available, using CPU.")
             device = "cpu"
 
-    x_train, y_train, height, width = eval(f"data.{data}")(
-        n_classes=n_classes,
-        ds_size=ds_size,
-    )
+    x_train, y_train, height, width = data.get_by_name(dataset, n_classes, ds_size)
 
     x_train = x_train.to(device)
     y_train = y_train.to(device)
@@ -202,7 +195,7 @@ def main(
         shuffle=False,
     )
 
-    net = eval(f"nn.{model[0]}")(*[int(a) for a in model[1:]])
+    net = nn.get_by_name(model, [eval(parameter) for parameter in model_parameters])
 
     diff = models.Diffusion(
         net=net,
