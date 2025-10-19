@@ -112,8 +112,8 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
 )
 @click.option(
     "--model-parameters",
-    type=tuple[str, ...],
-    default=("55", "8"),
+    type=str,
+    default="(55, 8)",
     help="Constructor parameters for the model",
 )
 @click.option(
@@ -166,7 +166,7 @@ def main(
     seed: int | None,
     load_path: pathlib.Path | None,
     model: str,
-    model_parameters: tuple[str, ...],
+    model_parameters: str,
     guidance: bool,
     device: str,
     tau: int,
@@ -204,7 +204,7 @@ def main(
         shuffle=False,
     )
 
-    net = nn.get_by_name(model, [eval(parameter) for parameter in model_parameters])
+    net = nn.get_by_name(model, eval(model_parameters))
 
     diff = models.Diffusion(
         net=net,
