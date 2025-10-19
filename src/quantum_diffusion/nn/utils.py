@@ -1,11 +1,12 @@
 import math
+import typing
 import warnings
 
 import einops
 import torch
 
 
-def autocrop(x, y):
+def autocrop(x: torch.Tensor, y: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Center crop the y image to the size of x"""
     xs, ys = x.shape, y.shape
     if xs > ys:
@@ -20,7 +21,7 @@ def autocrop(x, y):
     return x, y_cropped
 
 
-def autopad(x, y):
+def autopad(x: torch.Tensor, y: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Pad the y image to the size of x"""
     xs, ys = x.shape, y.shape
     if xs < ys:
@@ -40,7 +41,11 @@ def autopad(x, y):
     return x, y_padded
 
 
-def __get_label_embedding_1(labels: torch.Tensor, width: int, height: int):
+def __get_label_embedding_1(
+    labels: torch.Tensor,
+    width: int,
+    height: int,
+) -> torch.Tensor:
     """Returns a mask for the labels"""
     batch = labels.shape[0]
     y = einops.repeat(labels, "b -> b w", w=width)
@@ -56,7 +61,11 @@ def __get_label_embedding_1(labels: torch.Tensor, width: int, height: int):
     return mask
 
 
-def __get_label_embedding_2(labels: torch.Tensor, width: int, height: int):
+def __get_label_embedding_2(
+    labels: torch.Tensor,
+    width: int,
+    height: int,
+) -> torch.Tensor:
     """Returns a mask for the labels"""
     assert labels.unique().shape[0] == 2 and labels.min() == 0 and labels.max() == 1, (
         "Labels must be binary"
@@ -75,7 +84,11 @@ def __get_label_embedding_2(labels: torch.Tensor, width: int, height: int):
 get_label_embedding = __get_label_embedding_1
 
 
-def circuit_to_qasm(weights, wires, inp):
+def circuit_to_qasm(
+    weights: typing.Any,
+    wires: int,
+    inp: typing.Any,
+) -> str:
     import pennylane as qml
 
     dummy_qdev = qml.device("qiskit.aer", wires=wires)  # Create a dummy device
@@ -96,7 +109,7 @@ def repeat_qasm(
     wires: int,
     ancilla: bool,
     reps: int,
-):
+) -> str:
     qasm_ = qasm.split("\n")
     header = "\n".join(qasm_[0:4])
     measurements = "\n".join(qasm_[-wires:])
@@ -112,7 +125,11 @@ def repeat_qasm(
     return total
 
 
-def sample_from_qiskit(qasm_str, backend="statevector_simulator", shots=None):
+def sample_from_qiskit(
+    qasm_str: str,
+    backend: str = "statevector_simulator",
+    shots: int | None = None,
+) -> torch.Tensor:
     import torch
     from qiskit import Aer, QuantumCircuit, execute
 

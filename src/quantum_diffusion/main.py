@@ -17,7 +17,7 @@ def train(
     tau: int,
     lr: float,
     save_path: pathlib.Path,
-):
+) -> None:
     logger.info("Training model")
     diff.train()
 
@@ -159,7 +159,7 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
 )
 def main(
     dataset: str,
-    dataset_location: pathlib.Path,
+    dataset_location: pathlib.Path | None,
     n_classes: int,
     target: str,
     save_path: pathlib.Path,

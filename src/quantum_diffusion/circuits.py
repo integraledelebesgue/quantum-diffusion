@@ -11,7 +11,9 @@ class CircuitFactory:
         self.wires = wires
         self.dev = qml.device("default.qubit", wires=wires)
 
-    def classic_circuit(self, label, inp, weights):
+    def classic_circuit(
+        self, label: torch.Tensor | float, inp: torch.Tensor, weights: torch.Tensor
+    ) -> typing.Any:
         qml.AmplitudeEmbedding(
             inp, wires=range(0, self.wires - 1), normalize=True, pad_with=0.0
         )  # embed noisy input
@@ -21,7 +23,7 @@ class CircuitFactory:
         )  # entangling subcircuit
         return qml.probs(wires=range(self.wires))  # return probabilities of each state
 
-    def _embedding_only_circuit(self, label: torch.Tensor, inp):
+    def _embedding_only_circuit(self, label: torch.Tensor, inp: torch.Tensor) -> typing.Any:
         """
         Helper circuit as ground truth for manual testing.
         Embeds labels and input and returns the statevector.
@@ -37,10 +39,10 @@ class CircuitFactory:
 
     def manual_embedding(
         self,
-        label: typing.Union[torch.Tensor, float],
+        label: torch.Tensor | float,
         inp: torch.Tensor,
-        auto_normalize=True,
-    ):
+        auto_normalize: bool = True,
+    ) -> torch.Tensor:
         if isinstance(label, float):
             label = torch.tensor(label)
         if inp.dim() == 1:
@@ -66,18 +68,20 @@ class CircuitFactory:
         stack = stack.flatten(start_dim=1, end_dim=2)
         return stack
 
-    def ansatz_circuit(self, inp_state, weights):
+    def ansatz_circuit(self, inp_state: torch.Tensor, weights: torch.Tensor) -> typing.Any:
         qml.QubitStateVector(inp_state, wires=range(self.wires))
         qml.StronglyEntanglingLayers(weights, wires=range(self.wires))
         return qml.state()
 
-    def sampling_circuit(self, inp_state, weights, num_repeats):
+    def sampling_circuit(
+        self, inp_state: torch.Tensor, weights: torch.Tensor, num_repeats: int
+    ) -> typing.Any:
         qml.QubitStateVector(inp_state, wires=range(self.wires))
         for _ in range(num_repeats):
             qml.StronglyEntanglingLayers(weights, wires=range(self.wires))
         return qml.state()
 
-    def sampling_qnode(self, num_repeats: int):
+    def sampling_qnode(self, num_repeats: int) -> qml.QNode:
         def __circuit(inp_image, weights):
             qml.QubitStateVector(inp_image, wires=range(self.wires))
             for _ in range(num_repeats):
@@ -94,13 +98,18 @@ class CircuitFactory:
         )
 
     def sampling_qnode_with_swap(
-        self, num_repeats: int, has_reuploads: bool, qnode_kwargs: dict = {}
-    ):
+        self,
+        num_repeats: int,
+        has_reuploads: bool,
+        qnode_kwargs: dict[str, typing.Any] | None = None,
+    ) -> qml.QNode:
         """
         Create a new qnode with more wires.
         For each num_repeat, an additional wire is added to inject the label rotation.
         THIS IS JUST A WORKAROUNG UNTIL PENNYLANE SUPPORTS THE RESET GATE.
         """
+        if qnode_kwargs is None:
+            qnode_kwargs = {}
 
         def __circuit(inp_image, weights, label):
             qml.QubitStateVector(inp_image, wires=range(self.wires - 1))
@@ -129,7 +138,7 @@ class CircuitFactory:
             **qnode_kwargs,
         )
 
-    def get_qnode(self, circuit_function: typing.Callable):
+    def get_qnode(self, circuit_function: typing.Callable) -> qml.QNode:
         return qml.QNode(
             func=circuit_function,
             device=self.dev,

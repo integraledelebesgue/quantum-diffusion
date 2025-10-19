@@ -15,7 +15,7 @@ class Diffusion(torch.nn.Module):
 
     net: torch.nn.Module
     prediction_goal: str
-    add_noise: Callable[[typing.Any], torch.Tensor]
+    add_noise: Callable[..., torch.Tensor]
     height: int
     width: int
     directed: bool
@@ -26,7 +26,7 @@ class Diffusion(torch.nn.Module):
     def __init__(
         self,
         net: torch.nn.Module,
-        noise_f: Callable[[typing.Any], torch.Tensor],
+        noise_f: Callable[..., torch.Tensor],
         prediction_goal: str,
         shape: tuple[int, int],
         loss: torch.nn.Module = torch.nn.MSELoss(reduction="none"),
@@ -69,7 +69,7 @@ class Diffusion(torch.nn.Module):
         self,
         x: torch.Tensor | None,
         **kwargs,
-    ) -> torch.Tensor | None:
+    ) -> typing.Any:
         """
         If training, executes training step. If not, samples from the model.
         """
@@ -269,7 +269,7 @@ class Diffusion(torch.nn.Module):
         vars = einops.rearrange(vars, "iters height width -> (iters height) (width)")
         return sample, vars
 
-    def save_name(self):
+    def save_name(self) -> str:
         return f"{self.net.save_name()}{'_noise' if self.prediction_goal == 'noise' else ''}"  # type: ignore
 
 

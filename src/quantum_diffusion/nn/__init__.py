@@ -3,9 +3,10 @@ Module contains all neural networks used in the project.
 Some are not used anymore, but are kept for reference and marked as deprecated.
 """
 
+from collections.abc import Sequence
 from typing import Any, Literal
 
-from torchvision.ops.poolers import torch
+import torch
 
 from .conv import DeepConvDirectedMulti, DeepConvDirectedSingle, DeepConvUndirected
 from .dense import DenseDirected, DenseUndirected
@@ -49,7 +50,7 @@ Model = Literal[
 ]
 
 
-def get_by_name(model: Model, parameters: list[Any]) -> torch.nn.Module:
+def get_by_name(model: Model, parameters: Sequence[Any]) -> torch.nn.Module:
     match model:
         case "DeepConvDirectedMulti":
             return DeepConvDirectedMulti(*parameters)

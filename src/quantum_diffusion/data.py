@@ -18,14 +18,17 @@ Dataset = Literal[
 
 def get_by_name(
     dataset: Dataset,
-    location: pathlib.Path,
+    location: pathlib.Path | None,
     n_classes: int,
     ds_size: int,
 ) -> tuple[torch.Tensor, torch.Tensor, int, int]:
-    match dataset:
-        case "mnist_8x8":
-            return mnist_8x8(n_classes, ds_size)
+    if dataset == "mnist_8x8":
+        return mnist_8x8(n_classes, ds_size)
 
+    if location is None:
+        raise ValueError("dataset-location is required for mnist_28x28")
+
+    match dataset:
         case "mnist_28x28":
             return mnist_28x28(location, n_classes, ds_size)
 

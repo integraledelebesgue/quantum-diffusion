@@ -5,7 +5,14 @@ from .unet import DownBlock, UNetUndirected, UpBlock, get_label_embedding
 
 
 class DownBlockS(DownBlock):
-    def __init__(self, in_channels, out_channels, pooling, kernel_size=3, qdepth=3):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        pooling: bool,
+        kernel_size: int = 3,
+        qdepth: int = 3,
+    ) -> None:
         super().__init__(in_channels, out_channels, pooling, kernel_size, qdepth)
         self.net = torch.nn.Sequential(
             QConv2d(
@@ -22,11 +29,11 @@ class DownBlockS(DownBlock):
 class UpBlockS(UpBlock):
     def __init__(
         self,
-        in_channels,
-        out_channels,
-        kernel_size=3,
-        qdepth=3,
-    ):
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 3,
+        qdepth: int = 3,
+    ) -> None:
         super().__init__(in_channels, out_channels, kernel_size, qdepth=0)
         self.net = torch.nn.Sequential(
             QConv2d(
@@ -53,10 +60,10 @@ class UpBlockS(UpBlock):
 class UNetUndirectedS(UNetUndirected):
     def __init__(
         self,
-        depth=3,
-        start_channels=8,
-        qdepth=3,
-    ):
+        depth: int = 3,
+        start_channels: int = 8,
+        qdepth: int = 3,
+    ) -> None:
         super().__init__(depth, start_channels, qdepth=0)
         self.qdepth = qdepth
         down_blocks = [
@@ -86,7 +93,7 @@ class UNetUndirectedS(UNetUndirected):
 
 
 class UnetDirectedS(UNetUndirectedS):
-    def forward(self, x, y):
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         mask = get_label_embedding(y, x.shape[2], x.shape[3])
         masked_x = x + mask
         return super().forward(masked_x)

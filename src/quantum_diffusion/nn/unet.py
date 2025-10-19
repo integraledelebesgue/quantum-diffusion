@@ -4,7 +4,7 @@ from .qconv import QConv2d
 from .utils import autopad, get_label_embedding
 
 
-def Conv2d(**kwargs):
+def Conv2d(**kwargs) -> torch.nn.Module:
     """
     Wrapper for QConv2d and torch.nn.Conv2d.
     If qdepth is 0, then torch.nn.Conv2d is used, otherwise QConv2d is used.
@@ -17,15 +17,21 @@ def Conv2d(**kwargs):
     """
     qdepth = kwargs.pop("qdepth", 3)
     if qdepth > 0:
-        return QConv2d(qdepth=qdepth, **kwargs)  # type: ignore
+        return QConv2d(qdepth=qdepth, **kwargs)  # type: ignore[arg-type]
     else:
-        return torch.nn.Conv2d(**kwargs)  # type: ignore
+        return torch.nn.Conv2d(**kwargs)  # type: ignore[arg-type]
 
 
 class UpBlock(torch.nn.Module):
     """UpBlock for UNet."""
 
-    def __init__(self, in_channels, out_channels, kernel_size=3, qdepth=3):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 3,
+        qdepth: int = 3,
+    ) -> None:
         super(UpBlock, self).__init__()
 
         self.in_channels = in_channels
@@ -64,7 +70,7 @@ class UpBlock(torch.nn.Module):
             torch.nn.ReLU(),
         )
 
-    def forward(self, from_down, from_up):
+    def forward(self, from_down: torch.Tensor, from_up: torch.Tensor) -> torch.Tensor:
         from_up = self.up_conv(from_up)
         from_down, from_up = autopad(
             from_down, from_up
@@ -77,7 +83,14 @@ class UpBlock(torch.nn.Module):
 class DownBlock(torch.nn.Module):
     """DownBlock for UNet"""
 
-    def __init__(self, in_channels, out_channels, pooling, kernel_size=3, qdepth=3):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        pooling: bool,
+        kernel_size: int = 3,
+        qdepth: int = 3,
+    ) -> None:
         super(DownBlock, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -106,7 +119,7 @@ class DownBlock(torch.nn.Module):
         if self.pooling:
             self.pooling_layer = torch.nn.MaxPool2d(kernel_size=2, stride=2)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         x = self.net(x)
         before_pool = x
         if self.pooling:
@@ -122,10 +135,10 @@ class UNetUndirected(torch.nn.Module):
 
     def __init__(
         self,
-        depth=3,
-        start_channels=8,
-        qdepth=3,
-    ):
+        depth: int = 3,
+        start_channels: int = 8,
+        qdepth: int = 3,
+    ) -> None:
         super().__init__()
         self.depth = depth
         self.start_channels = start_channels
@@ -142,7 +155,7 @@ class UNetUndirected(torch.nn.Module):
             )
 
         up_blocks = []
-        for i in range(self.depth - 1):
+        for _ in range(self.depth - 1):
             in_channel = out_channel  # set the input channel to the output channel of the previous layer
             out_channel = out_channel // 2
             up_blocks.append(UpBlock(in_channel, out_channel, qdepth=qdepth))
@@ -157,9 +170,9 @@ class UNetUndirected(torch.nn.Module):
             qdepth=qdepth,
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         encoder_outputs = []  # list of skip connections
-        for i, block in enumerate(self.down_blocks):
+        for _, block in enumerate(self.down_blocks):
             x, before_pool = block(x)
             encoder_outputs.append(before_pool)
 
@@ -179,7 +192,7 @@ class UNetUndirected(torch.nn.Module):
 
 
 class UnetDirected(UNetUndirected):
-    def forward(self, x, y):
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         mask = get_label_embedding(y, x.shape[2], x.shape[3])
         masked_x = x + mask
         return super().forward(masked_x)
