@@ -35,3 +35,10 @@ build-backend = "hatchling.build"
 
 [tool.basedpyright]
  reportUnusedCallResult = false
+
+[dependency-groups]
+dev = [
+    "icecream>=2.1.8",
+    "ipykernel>=7.0.1",
+    "jupyter>=1.1.1",
+]
