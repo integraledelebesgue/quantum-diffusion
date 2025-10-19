@@ -7,6 +7,7 @@ import numpy as np
 import pennylane as qml
 import qw_map
 import torch
+from typing_extensions import override
 
 from .. import circuits
 
@@ -14,19 +15,33 @@ from .. import circuits
 class QDenseUndirected(torch.nn.Module):
     """Dense variational circuit. Undirected"""
 
-    def __init__(self, qdepth, shape) -> None:
+    qdepth: int
+    height: int
+    width: int
+    wires: int
+
+    weights: torch.nn.Parameter
+
+    qdev: Any
+    qnode: qml.QNode
+
+    def __init__(self, qdepth: int, shape: tuple[int, int] | int) -> None:
         super().__init__()
         self.qdepth = qdepth
+
         if isinstance(shape, int):
             shape = (shape, shape)
+
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height))
-        self.qdev = qml.device("default.qubit", wires=self.wires)
+
         weight_shape = qml.StronglyEntanglingLayers.shape(self.qdepth, self.wires)
         self.weights = torch.nn.Parameter(
             torch.randn(weight_shape, requires_grad=True) * 0.4
         )
+
+        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.qnode = qml.QNode(
             func=self._circuit,
             device=self.qdev,
@@ -34,30 +49,35 @@ class QDenseUndirected(torch.nn.Module):
             diff_method="backprop",
         )
 
-    def _circuit(self, inp):
+    def _circuit(self, inp: torch.Tensor):
         qml.AmplitudeEmbedding(
-            features=inp, wires=range(self.wires), normalize=True, pad_with=0.1
+            features=inp,
+            wires=range(self.wires),
+            normalize=True,
+            pad_with=0.1,
         )
         qml.StronglyEntanglingLayers(
-            weights=qw_map.tanh(self.weights), wires=range(self.wires)
+            weights=qw_map.tanh(self.weights),
+            wires=range(self.wires),
         )
         return qml.probs(wires=range(self.wires))
 
-    def _post_process(self, probs):
+    def _post_process(self, probs: torch.Tensor) -> torch.Tensor:
         # probs = probs[:, ::2] # Drop all probabilities for |xxxx1>
         probs = probs[:, : self.pixels]
         probs = probs * self.pixels
         probs = torch.clamp(probs, 0, 1)
         return probs
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.qnode(x)
         x = self._post_process(x)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
         return x
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"QDenseUndirected(qdepth={self.qdepth}, wires={self.wires})"
 
     def save_name(self) -> str:
@@ -67,22 +87,39 @@ class QDenseUndirected(torch.nn.Module):
 class QDense2Undirected(torch.nn.Module):
     """Dense variational circuit. Undirected. Uses ancilla qubit"""
 
+    qdepth: int
+    height: int
+    width: int
+    wires: int
+
+    weights: torch.nn.Parameter
+
+    qdev: Any
+    qnode: qml.QNode
+
     def __init__(
-        self, qdepth, shape, entangling_layer=qml.StronglyEntanglingLayers
+        self,
+        qdepth: int,
+        shape: tuple[int, int] | int,
+        entangling_layer=qml.StronglyEntanglingLayers,
     ) -> None:
         super().__init__()
+
         self.qdepth = qdepth
         if isinstance(shape, int):
             shape = (shape, shape)
+
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.entangling_layer = entangling_layer
         self.wires = math.ceil(math.log2(self.width * self.height)) + 1
-        self.qdev = qml.device("default.qubit", wires=self.wires)
+
         weight_shape = self.entangling_layer.shape(self.qdepth, self.wires)
         self.weights = torch.nn.Parameter(
             torch.randn(weight_shape, requires_grad=True) * 0.4
         )
+
+        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.qnode = qml.QNode(
             func=self._circuit,
             device=self.qdev,
@@ -90,33 +127,37 @@ class QDense2Undirected(torch.nn.Module):
             diff_method="backprop",
         )
 
-    def _circuit(self, inp):
+    def _circuit(self, inp: torch.Tensor):
         qml.AmplitudeEmbedding(
-            features=inp, wires=range(self.wires - 1), normalize=True, pad_with=0.1
+            features=inp,
+            wires=range(self.wires - 1),
+            normalize=True,
+            pad_with=0.1,
         )
         self.entangling_layer(
             weights=qw_map.tanh(self.weights), wires=range(self.wires)
         )
         return qml.probs(wires=range(self.wires))
 
-    def _post_process(self, probs):
+    def _post_process(self, probs: torch.Tensor) -> torch.Tensor:
         probs = probs[:, ::2]  # Drop all probabilities for |xxxx1>
         probs = probs[:, : self.pixels]
         probs = probs * self.pixels
         probs = torch.clamp(probs, 0, 1)
         return probs
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.qnode(x)
         x = self._post_process(x)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
         return x
 
-    def __strongly(self):
+    def __strongly(self) -> str:
         return "" if "strongly" in str(self.entangling_layer).lower() else "_weakly"
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"QDense2Undirected(qdepth={self.qdepth}, wires={self.wires}{self.__strongly()})"
 
     def save_name(self) -> str:
@@ -126,7 +167,7 @@ class QDense2Undirected(torch.nn.Module):
 class QDenseDirected(QDense2Undirected):
     """Dense variatonal circuit with label"""
 
-    def _circuit(self, inp, label):
+    def _circuit(self, inp: torch.Tensor, label: torch.Tensor):
         qml.AmplitudeEmbedding(
             features=inp, wires=range(self.wires - 1), normalize=True, pad_with=0.1
         )
@@ -136,14 +177,15 @@ class QDenseDirected(QDense2Undirected):
         )
         return qml.probs(wires=range(self.wires))
 
-    def forward(self, x, y):
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.qnode(x, y)
         x = self._post_process(x)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
         return x
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"QDenseDirected(qdepth={self.qdepth}, wires={self.wires})"
 
     def save_name(self) -> str:
@@ -151,11 +193,29 @@ class QDenseDirected(QDense2Undirected):
 
 
 class QDenseDirectedReupload(torch.nn.Module):
-    def __init__(self, qdepth, shape, num_reuploads=2):
+    qdepth: int
+    height: int
+    width: int
+    wires: int
+
+    weights: torch.nn.ParameterList
+
+    qdev: Any
+    qnode: qml.QNode
+
+    def __init__(
+        self,
+        qdepth: int,
+        shape: tuple[int, int] | int,
+        num_reuploads: int = 2,
+    ) -> None:
         super().__init__()
+
         self.qdepth = qdepth
+
         if isinstance(shape, int):
             shape = (shape, shape)
+
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height)) + 1
@@ -168,6 +228,7 @@ class QDenseDirectedReupload(torch.nn.Module):
             self.weights.append(
                 torch.nn.Parameter(torch.randn(weight_shape, requires_grad=True) * 0.4)
             )
+
         self.qnode = qml.QNode(
             func=self._circuit,
             device=self.qdev,
@@ -175,21 +236,21 @@ class QDenseDirectedReupload(torch.nn.Module):
             diff_method="backprop",
         )
 
-    def _post_process(self, probs):
+    def _post_process(self, probs: torch.Tensor) -> torch.Tensor:
         probs = probs[:, ::2]  # Drop all probabilities for |xxxx1>
         probs = probs[:, : self.pixels]
         probs = probs * self.pixels
         probs = torch.clamp(probs, 0, 1)
         return probs
 
-    def forward(self, x, y):
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.qnode(x, y)
         x = self._post_process(x)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
         return x
 
-    def _circuit(self, inp, label):
+    def _circuit(self, inp: torch.Tensor, label: torch.Tensor):
         qml.AmplitudeEmbedding(
             features=inp, wires=range(self.wires - 1), normalize=True, pad_with=0.1
         )
@@ -211,23 +272,28 @@ class QDense4StatesUndirected(torch.nn.Module):
     def __init__(
         self,
         qdepth: int,
-        shape: Tuple[int, int],
-        directed=False,
+        shape: tuple[int, int] | int,
+        directed: bool = False,
     ) -> None:
         super().__init__()
+
         assert not directed, "Directed not supported"
+
         if isinstance(shape, int):
             shape = (shape, shape)
+
         self.directed = directed
         self.qdepth = qdepth
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height))
-        self.qdev = qml.device("default.qubit", wires=self.wires)
+
         weight_shape = qml.StronglyEntanglingLayers.shape(qdepth, self.wires)
         self.weights = torch.nn.Parameter(
             torch.randn(weight_shape, requires_grad=True) * 0.4
         )
+
+        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.qnode = qml.QNode(
             func=self._circuit,
             device=self.qdev,
@@ -241,9 +307,9 @@ class QDense4StatesUndirected(torch.nn.Module):
             qml.StronglyEntanglingLayers(
                 weights=qw_map.tanh(self.weights), wires=range(self.wires)
             )
-        return qml.state()  # type: ignore
+        return qml.state()
 
-    def forward(self, x: torch.Tensor, reps=1, other_node=None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, reps: int = 1, other_node=None) -> torch.Tensor:
         assert x.ndim == 4, (
             f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"
         )
