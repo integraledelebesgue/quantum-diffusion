@@ -2,12 +2,13 @@ import math
 import warnings
 from typing import Any, Tuple
 
-import circuits
 import einops
 import numpy as np
 import pennylane as qml
 import qw_map
 import torch
+
+from .. import circuits
 
 
 class QDenseUndirected(torch.nn.Module):

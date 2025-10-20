@@ -7,7 +7,7 @@ import torch
 import tqdm
 from loguru import logger
 
-from quantum_diffusion import data, models, nn, noise
+from . import data, models, nn, noise
 
 
 def train(
