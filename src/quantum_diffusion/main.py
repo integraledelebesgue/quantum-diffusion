@@ -1,5 +1,4 @@
 import pathlib
-import webbrowser
 
 import click
 import matplotlib.pyplot as plt
@@ -54,7 +53,7 @@ def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
     plt.axis("off")
     sp = save_path / f"{diff.save_name()}.png"
     plt.savefig(sp)
-    webbrowser.open(sp.absolute().as_uri())
+    # webbrowser.open(sp.absolute().as_uri())
 
 
 @click.command(help="Quantum Denoising Diffusion Model CLI")
