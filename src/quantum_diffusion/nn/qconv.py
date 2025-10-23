@@ -17,6 +17,7 @@ class _QConv2d_FAST(torch.nn.Module):
     kernel_size: tuple[int, int]
     padding: tuple[int, int]
     wires: int
+    qdepth: int
 
     unfold: torch.nn.Unfold
     weights: torch.nn.Parameter
@@ -45,6 +46,7 @@ class _QConv2d_FAST(torch.nn.Module):
         )
         self.padding = padding if isinstance(padding, tuple) else (padding, padding)
         self.unfold = torch.nn.Unfold(kernel_size=kernel_size, padding=padding)
+        self.qdepth = qdepth
 
         wires_for_inp = math.ceil(
             math.log2(self.kernel_size[0] * self.kernel_size[1] * in_channels)
@@ -127,6 +129,9 @@ class _QConv2d_FAST(torch.nn.Module):
     def __repr__(self) -> str:
         return f"QConv2d({self.in_channels}, {self.out_channels}, kernel_size={self.kernel_size}, padding={self.padding}, wires={self.wires})"
 
+    def save_name(self) -> str:
+        return f"qconv2d_fast_i{self.in_channels}_o{self.out_channels}_q{self.qdepth}"
+
     def train(self, mode: bool = True) -> Self:
         super().train(mode)
 
@@ -138,7 +143,7 @@ class _QConv2d_FAST(torch.nn.Module):
                     qw_map.tanh(self.weights), wires=range(self.wires)
                 )
 
-            matrix: torch.Tensor = qml.matrix(_sub_circuit)()
+            matrix: torch.Tensor = qml.matrix(_sub_circuit, range(self.wires))()
             assert isinstance(matrix, torch.Tensor)
             self.sample_matrix = matrix
 
@@ -295,6 +300,9 @@ class _QConv2d_MEDIUM(torch.nn.Module):
     def __repr__(self) -> str:
         return f"QConv2d_MEDIUM({self.in_channels}, {self.out_channels}, kernel_size={self.kernel_size}, padding={self.padding}, wires={self.wires})"
 
+    def save_name(self) -> str:
+        return f"qconv2d_medium_i{self.in_channels}_o{self.out_channels}_q{self.qdepth}"
+
 
 class _QConv2d_SLOW(torch.nn.Module):
     """Very slow convolutional layer. Very memory efficient"""
@@ -409,6 +417,9 @@ class _QConv2d_SLOW(torch.nn.Module):
     @override
     def __repr__(self) -> str:
         return f"QConv2d_SLOW({self.in_channels}, {self.out_channels}, kernel_size={self.kernel_size}, padding={self.padding}, wires={self.wires})"
+
+    def save_name(self) -> str:
+        return f"qconv2d_slow_i{self.in_channels}_o{self.out_channels}_q{self.qdepth}"
 
 
 QConv2d = _QConv2d_FAST
