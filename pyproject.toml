@@ -37,7 +37,8 @@ build-backend = "hatchling.build"
 quantum-diffusion = "quantum_diffusion:main"
 
 [tool.basedpyright]
- reportUnusedCallResult = false
+reportUnusedCallResult = false
+reportMissingTypeStubs = false
 
 [dependency-groups]
 dev = [
