@@ -42,7 +42,7 @@ class Diffusion(torch.nn.Module):
         noise_function: Callable[..., torch.Tensor],
         prediction_goal: Literal["data", "noise"],
         shape: tuple[int, int],
-        loss: torch.nn.Module = torch.nn.MSELoss(reduction="none"),
+        loss: torch.nn.Module | None = None,
         directed: bool = False,
         on_states: bool = False,
     ) -> None:
@@ -56,7 +56,7 @@ class Diffusion(torch.nn.Module):
         self.noise_function = noise_function
 
         self.net = net
-        self.loss = loss
+        self.loss = loss if loss is not None else torch.nn.MSELoss(reduction="none")
 
         if self.on_states:
             self.loss = StateLoss()
