@@ -1,4 +1,5 @@
 import torch
+from typing_extensions import override
 
 from .qconv import QConv2d
 from .utils import autopad, get_label_embedding
@@ -70,6 +71,7 @@ class UpBlock(torch.nn.Module):
             torch.nn.ReLU(),
         )
 
+    @override
     def forward(self, from_down: torch.Tensor, from_up: torch.Tensor) -> torch.Tensor:
         from_up = self.up_conv(from_up)
         from_down, from_up = autopad(
@@ -119,6 +121,7 @@ class DownBlock(torch.nn.Module):
         if self.pooling:
             self.pooling_layer = torch.nn.MaxPool2d(kernel_size=2, stride=2)
 
+    @override
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         x = self.net(x)
         before_pool = x
@@ -170,6 +173,7 @@ class UNetUndirected(torch.nn.Module):
             qdepth=qdepth,
         )
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         encoder_outputs = []  # list of skip connections
         for _, block in enumerate(self.down_blocks):
@@ -241,6 +245,7 @@ class UnetDirected(torch.nn.Module):
             qdepth=qdepth,
         )
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         mask = get_label_embedding(y, x.shape[2], x.shape[3])
         masked_x = x + mask

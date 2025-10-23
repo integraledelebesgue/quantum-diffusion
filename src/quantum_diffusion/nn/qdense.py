@@ -69,12 +69,14 @@ class QDenseUndirected(torch.nn.Module):
 
         return out
 
+    @override
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
         return x
 
+    @override
     def __repr__(self) -> str:
         return f"QDenseUndirected(qdepth={self.qdepth}, wires={self.wires})"
 
@@ -146,6 +148,7 @@ class QDense2Undirected(torch.nn.Module):
 
         return out
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x)
@@ -225,6 +228,7 @@ class QDenseDirected(torch.nn.Module):
 
         return out
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x, y)
@@ -306,12 +310,14 @@ class QDenseDirectedReupload(torch.nn.Module):
 
         return out
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x, y)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
         return x
 
+    @override
     def __repr__(self):
         return f"QDenseDirectedReupload(qdepth={self.qdepth}, wires={self.wires}, num_reuploads={self.num_reuploads})"
 
@@ -379,6 +385,7 @@ class QDense4StatesUndirected(torch.nn.Module):
 
         return out
 
+    @override
     def forward(self, x: torch.Tensor, reps: int = 1, other_node=None) -> torch.Tensor:
         assert x.ndim == 4, (
             f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"
@@ -388,6 +395,7 @@ class QDense4StatesUndirected(torch.nn.Module):
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
         return x
 
+    @override
     def __repr__(self) -> str:
         return f"QDense4StatesUndirected(qdepth={self.qdepth}, wires={self.wires})"
 
@@ -519,6 +527,7 @@ class QDense4StatesAncilla(torch.nn.Module):
 
         return out
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         assert x.ndim == 4, (
             f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"

@@ -24,6 +24,7 @@ class DenseUndirected(torch.nn.Module):
 
         self.net = torch.nn.Sequential(*layers)
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         _, _, w, h = x.shape
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
@@ -63,6 +64,7 @@ class DenseDirected(torch.nn.Module):
 
         self.net = torch.nn.Sequential(*layers)
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         _, _, w, h = x.shape
         y = y.unsqueeze(-1)

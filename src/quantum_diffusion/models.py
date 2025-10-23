@@ -3,6 +3,7 @@ from typing import Literal, Protocol
 
 import einops
 import torch
+from typing_extensions import override
 
 
 class GuidedDenoisingNetwork(Protocol):
@@ -193,6 +194,7 @@ class StateLoss(torch.nn.Module):
     def __init__(self) -> None:
         super().__init__()
 
+    @override
     def forward(self, input: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         assert input.is_complex(), "input must be complex"
         assert not target.is_complex(), "target must be real"

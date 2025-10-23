@@ -40,6 +40,7 @@ class DeepConvUndirected(torch.nn.Module):
         self.net = build_conv_layers(channels)
         self.shape = shape
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         assert len(x.shape) == 4, "Input must be 4D tensor"
         return self.net.forward(x)
@@ -80,6 +81,7 @@ class DeepConvDirectedMulti(torch.nn.Module):
         layers[-1] = torch.nn.Sigmoid()
         self.layers = torch.nn.ModuleList(layers)
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         assert x.ndim == 4, "Input must be 4D tensor"
 
@@ -115,6 +117,7 @@ class DeepConvDirectedSingle(torch.nn.Module):
         self.net = build_conv_layers(channels)
         self.shape = shape
 
+    @override
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         assert x.ndim == 4, "Input must be 4D tensor"
 
