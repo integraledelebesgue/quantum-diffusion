@@ -16,11 +16,12 @@ def train(
     tau: int,
     lr: float,
     save_path: pathlib.Path,
+    display_progress_bar: bool,
 ) -> None:
     logger.info("Training model")
     diffusion.train()
 
-    pbar = tqdm.tqdm(total=epochs)
+    pbar = tqdm.tqdm(total=epochs) if display_progress_bar else None
     opt = torch.optim.Adam(diffusion.parameters(), lr=lr)
 
     for _ in range(epochs):
@@ -34,10 +35,13 @@ def train(
             epoch_loss += batch_loss.mean()
             opt.step()
 
-        pbar.set_postfix({"loss": epoch_loss.item()})  # type: ignore
-        pbar.update(1)
+        if pbar is not None:
+            pbar.set_postfix({"loss": epoch_loss.item()})  # type: ignore
+            pbar.update(1)
 
-    pbar.close()
+    if pbar is not None:
+        pbar.close()
+
     sp = save_path / f"{diffusion.save_name()}.pt"
 
     if not sp.parent.exists():
@@ -176,6 +180,13 @@ def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None
     show_default=True,
     help="Number of training epochs.",
 )
+@click.option(
+    "--no-interactive",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="Disable all interactive features (progress bars, preview windows, etc.).",
+)
 def main(
     dataset: str,
     dataset_location: pathlib.Path | None,
@@ -193,6 +204,7 @@ def main(
     ds_size: int,
     lr: float,
     epochs: int,
+    no_interactive: bool,
 ) -> None:
     if seed is not None:
         torch.manual_seed(seed)
@@ -236,7 +248,7 @@ def main(
     ).to(device)
 
     if load_path is None:
-        train(diffusion, ds, epochs, tau, lr, save_path)
+        train(diffusion, ds, epochs, tau, lr, save_path, not no_interactive)
         test(diffusion, tau, save_path)
         return
 
@@ -252,7 +264,7 @@ def main(
     diffusion.load_state_dict(torch.load(load_path))
 
     if continue_training:
-        train(diffusion, ds, epochs, tau, lr, save_path)
+        train(diffusion, ds, epochs, tau, lr, save_path, not no_interactive)
 
     test(diffusion, tau, save_path)
 
