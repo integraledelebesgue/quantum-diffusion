@@ -1,5 +1,4 @@
 import pathlib
-import webbrowser
 
 import click
 import matplotlib.pyplot as plt
@@ -50,13 +49,19 @@ def train(
 def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
     logger.info("Testing model")
     diff.eval()
+
     first_x = torch.rand(15, 1, 8, 8) * 0.5 + 0.75
-    outp = diff.sample(first_x=first_x, n_iters=tau * 2, show_progress=True)
-    plt.imshow(outp.cpu(), cmap="gray")
+    output = diff.sample(first_x=first_x, n_iters=tau * 2, show_progress=True).cpu()
+
+    if save_path.is_dir():
+        save_path = save_path / f"{diff.save_name()}.png"
+
+    if save_path.exists():
+        logger.warning(f"Overwriting the existing image at {save_path}")
+
+    plt.imshow(output, cmap="gray")
     plt.axis("off")
-    sp = save_path / f"{diff.save_name()}.png"
-    plt.savefig(sp)
-    webbrowser.open(sp.absolute().as_uri())
+    plt.savefig(save_path)
 
 
 @click.command(help="Quantum Denoising Diffusion Model CLI")
