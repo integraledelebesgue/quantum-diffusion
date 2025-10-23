@@ -92,7 +92,7 @@ def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None
 @click.option(
     "--target",
     type=click.Choice(["noise", "data"], case_sensitive=False),
-    default="noise",
+    default="data",
     show_default=True,
     help="Generate 'noise' or 'data'.",
 )
