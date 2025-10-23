@@ -211,7 +211,10 @@ class QDenseDirected(torch.nn.Module):
         qml.AmplitudeEmbedding(
             features=x, wires=range(self.wires - 1), normalize=True, pad_with=0.1
         )
-        qml.RX(phi=label, wires=self.wires - 1)
+        qml.RX(
+            phi=label,  # type: ignore
+            wires=self.wires - 1,
+        )
         qml.StronglyEntanglingLayers(
             weights=qw_map.tanh(self.weights), wires=range(self.wires)
         )
@@ -293,7 +296,10 @@ class QDenseDirectedReupload(torch.nn.Module):
             pad_with=0.1,
         )
         for w in self.weights:
-            qml.RX(phi=label, wires=self.wires - 1)
+            qml.RX(
+                phi=label,  # type: ignore
+                wires=self.wires - 1,
+            )
             qml.StronglyEntanglingLayers(
                 weights=qw_map.tanh(w), wires=range(self.wires)
             )
@@ -496,7 +502,10 @@ class QDense4StatesAncilla(torch.nn.Module):
     def circuit(self, x: torch.Tensor, label: torch.Tensor):
         qml.QubitStateVector(state=x, wires=range(self.wires - 1))
         for w in self.weights:
-            qml.RX(phi=label, wires=self.wires - 1)
+            qml.RX(
+                phi=label,  # type: ignore
+                wires=self.wires - 1,
+            )
             qml.StronglyEntanglingLayers(
                 weights=qw_map.tanh(w), wires=range(self.wires)
             )
