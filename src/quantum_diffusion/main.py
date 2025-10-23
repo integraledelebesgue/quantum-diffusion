@@ -10,7 +10,7 @@ from . import data, models, nn, noise
 
 
 def train(
-    diff: models.Diffusion,
+    diffusion: models.Diffusion,
     ds: torch.utils.data.DataLoader[tuple[torch.Tensor, ...]],
     epochs: int,
     tau: int,
@@ -18,10 +18,10 @@ def train(
     save_path: pathlib.Path,
 ) -> None:
     logger.info("Training model")
-    diff.train()
+    diffusion.train()
 
     pbar = tqdm.tqdm(total=epochs)
-    opt = torch.optim.Adam(diff.parameters(), lr=lr)
+    opt = torch.optim.Adam(diffusion.parameters(), lr=lr)
 
     for _ in range(epochs):
         epoch_loss = 0.0
@@ -30,7 +30,7 @@ def train(
         y: torch.Tensor
         for x, y in ds:
             opt.zero_grad()
-            batch_loss = diff.forward(x, y, tau)
+            batch_loss = diffusion.forward(x, y, tau)
             epoch_loss += batch_loss.mean()
             opt.step()
 
@@ -38,23 +38,28 @@ def train(
         pbar.update(1)
 
     pbar.close()
-    sp = save_path / f"{diff.save_name()}.pt"
+    sp = save_path / f"{diffusion.save_name()}.pt"
 
     if not sp.parent.exists():
         sp.parent.mkdir(parents=True)
 
-    torch.save(diff.state_dict(), sp)
+    torch.save(diffusion.state_dict(), sp)
 
 
-def test(diff: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
+def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
     logger.info("Testing model")
-    diff.eval()
+    diffusion.eval()
 
     first_x = torch.rand(15, 1, 8, 8) * 0.5 + 0.75
-    output = diff.sample(first_x=first_x, n_iters=tau * 2, show_progress=True).cpu()
+
+    output = diffusion.sample(
+        first_x=first_x,
+        n_iters=tau * 2,
+        show_progress=True,
+    ).cpu()
 
     if save_path.is_dir():
-        save_path = save_path / f"{diff.save_name()}.png"
+        save_path = save_path / f"{diffusion.save_name()}.png"
 
     if save_path.exists():
         logger.warning(f"Overwriting the existing image at {save_path}")
@@ -213,7 +218,7 @@ def main(
 
     net = nn.get_by_name(model, eval(model_parameters))
 
-    diff = models.Diffusion(
+    diffusion = models.Diffusion(
         net=net,
         shape=(height, width),
         noise_function=noise.add_normal_noise_multiple,
@@ -228,19 +233,19 @@ def main(
         # print("Loading model")
         try:
             if load_path.suffix == ".pt":
-                diff.load_state_dict(torch.load(load_path))
+                diffusion.load_state_dict(torch.load(load_path))
             else:
-                lp = load_path / f"{diff.save_name()}.pt"
-                diff.load_state_dict(torch.load(lp))
+                lp = load_path / f"{diffusion.save_name()}.pt"
+                diffusion.load_state_dict(torch.load(lp))
 
         except FileNotFoundError:
             logger.error("Failed to load model")
             run_train = True
 
     if load_path is None or run_train:
-        train(diff, ds, epochs, tau, lr, save_path)
+        train(diffusion, ds, epochs, tau, lr, save_path)
 
-    test(diff, tau, save_path)
+    test(diffusion, tau, save_path)
 
 
 if __name__ == "__main__":
