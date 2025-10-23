@@ -9,7 +9,7 @@ import torch
 from typing_extensions import Self, override
 
 
-class _QConv2d_FAST(torch.nn.Module):
+class QConv2dFast(torch.nn.Module):
     """Fastest version of QConv2d. Less Memory efficient."""
 
     in_channels: int
@@ -178,7 +178,7 @@ class _QConv2d_FAST(torch.nn.Module):
         return self
 
 
-class _QConv2d_MEDIUM(torch.nn.Module):
+class QConv2dMedium(torch.nn.Module):
     """Faster version of QConv2d_SLOW, but still slow. Memory efficient."""
 
     in_channels: int
@@ -310,7 +310,7 @@ class _QConv2d_MEDIUM(torch.nn.Module):
         return f"qconv2d_medium_i{self.in_channels}_o{self.out_channels}_q{self.qdepth}"
 
 
-class _QConv2d_SLOW(torch.nn.Module):
+class QConv2dSlow(torch.nn.Module):
     """Very slow convolutional layer. Very memory efficient"""
 
     in_channels: int
@@ -431,4 +431,4 @@ class _QConv2d_SLOW(torch.nn.Module):
         return f"qconv2d_slow_i{self.in_channels}_o{self.out_channels}_q{self.qdepth}"
 
 
-QConv2d = _QConv2d_FAST
+QConv2d = QConv2dFast
