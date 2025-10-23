@@ -30,6 +30,7 @@ def train(
 
         x: torch.Tensor
         y: torch.Tensor
+        
         for x, y in ds:
             opt.zero_grad()
             batch_loss = diffusion.forward(x, y, tau)
@@ -207,6 +208,7 @@ def main(
 
     if device == "cuda":
         logger.warning("CUDA performance is worse than CPU for most models.")
+        
         if not torch.cuda.is_available():
             logger.warning("CUDA is not available, using CPU.")
             device = "cpu"

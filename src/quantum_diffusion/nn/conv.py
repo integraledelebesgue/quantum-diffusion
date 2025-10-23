@@ -10,6 +10,7 @@ from .utils import get_label_embedding
 def build_conv_layers(channels: list[int]) -> torch.nn.Sequential:
     """Build convolutional layers for undirected models."""
     layers: list[torch.nn.Module] = []
+    
     for i in range(len(channels) - 1):
         layers.append(
             torch.nn.Conv2d(
@@ -22,6 +23,7 @@ def build_conv_layers(channels: list[int]) -> torch.nn.Sequential:
         layers.append(torch.nn.ReLU())
 
     layers.append(torch.nn.Sigmoid())
+    
     return torch.nn.Sequential(*layers)
 
 
@@ -43,6 +45,7 @@ class DeepConvUndirected(torch.nn.Module):
     @override
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         assert len(x.shape) == 4, "Input must be 4D tensor"
+        
         return self.net.forward(x)
 
     @override
@@ -61,12 +64,12 @@ class DeepConvDirectedMulti(torch.nn.Module):
 
     def __init__(self, channels: list[int]):
         super().__init__()
-
         assert channels[0] == channels[-1], "Input and output channels must be equal"
 
         self.channels = channels
 
         layers: list[torch.nn.Module] = []
+        
         for i in range(len(channels) - 1):
             layers.append(
                 torch.nn.Conv2d(
@@ -90,6 +93,7 @@ class DeepConvDirectedMulti(torch.nn.Module):
         for layer in self.layers:
             if isinstance(layer, torch.nn.Conv2d):
                 x = torch.cat((x, y), dim=1)  # Concatenate label channel
+            
             x = layer.forward(x)
 
         return x

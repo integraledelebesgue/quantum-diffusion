@@ -81,7 +81,10 @@ class _QConv2d_FAST(torch.nn.Module):
 
     def circuit(self, x: torch.Tensor):
         qml.AmplitudeEmbedding(
-            features=x, wires=range(self.wires), pad_with=0.5, normalize=True
+            features=x,
+            wires=range(self.wires),
+            pad_with=0.5,
+            normalize=True,
         )
         qml.StronglyEntanglingLayers(qw_map.tanh(self.weights), wires=range(self.wires))
         return qml.probs(wires=range(self.wires))
@@ -116,6 +119,7 @@ class _QConv2d_FAST(torch.nn.Module):
         x = x + 0.1
         x = self.apply_circuit(x)
         x = x.float()
+
         x = einops.rearrange(
             x,
             "(batch h_out w_out) channel -> batch channel h_out w_out",
@@ -139,7 +143,6 @@ class _QConv2d_FAST(torch.nn.Module):
 
         if not mode and self.sample_qnode is None:
             # print("Creating sample qnode")
-
             def _sub_circuit():
                 qml.StronglyEntanglingLayers(
                     qw_map.tanh(self.weights), wires=range(self.wires)
@@ -219,7 +222,6 @@ class _QConv2d_MEDIUM(torch.nn.Module):
 
         min_wires_inp = math.ceil(math.log2(self.kernel_size[0] * self.kernel_size[1]))
         min_wires_outp = math.ceil(math.log2(out_channels))
-
         self.wires = max(min_wires_inp, min_wires_outp, 1)
 
         template_shape = qml.StronglyEntanglingLayers.shape(
@@ -295,6 +297,7 @@ class _QConv2d_MEDIUM(torch.nn.Module):
         x = torch.nn.functional.pad(x, self.unfolded_padding_size)
         x = torch.nn.functional.normalize(x, dim=-1, p=2)
         x = self.apply_circuit(x)
+
         x = einops.rearrange(x, "(b h2 w2) c -> b c h2 w2", b=b, h2=h_out, w2=w_out)
 
         return x
@@ -410,12 +413,14 @@ class _QConv2d_SLOW(torch.nn.Module):
         x = torch.nn.functional.normalize(x, dim=-1, p=2)
 
         x_out = torch.empty((x.shape[0], self.out_channels), requires_grad=False)
+
         for ix in range(x.shape[0]):
             circuit_out = self.qnode(*x[ix])
             pp = self.post_process(circuit_out)
             x_out[ix] = pp
 
         x_out = einops.rearrange(x_out, "(b h w) c -> b c h w", b=b, h=h_out, w=w_out)
+
         return x_out
 
     @override

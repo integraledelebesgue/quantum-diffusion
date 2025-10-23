@@ -74,6 +74,7 @@ class QDenseUndirected(torch.nn.Module):
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
+        
         return x
 
     @override
@@ -153,6 +154,7 @@ class QDense2Undirected(torch.nn.Module):
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
+        
         return x
 
     def __strongly(self) -> str:
@@ -236,6 +238,7 @@ class QDenseDirected(torch.nn.Module):
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x, y)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
+        
         return x
 
     @override
@@ -275,6 +278,7 @@ class QDenseDirectedReupload(torch.nn.Module):
         self.num_reuploads = num_reuploads
 
         self.weights = torch.nn.ParameterList()
+        
         for i in np.array_split(np.arange(qdepth), num_reuploads):
             weight_shape = qml.StronglyEntanglingLayers.shape(len(i), self.wires)
             self.weights.append(
@@ -295,6 +299,7 @@ class QDenseDirectedReupload(torch.nn.Module):
             normalize=True,
             pad_with=0.1,
         )
+        
         for w in self.weights:
             qml.RX(
                 phi=label,  # type: ignore
@@ -303,6 +308,7 @@ class QDenseDirectedReupload(torch.nn.Module):
             qml.StronglyEntanglingLayers(
                 weights=qw_map.tanh(w), wires=range(self.wires)
             )
+        
         return qml.probs(wires=range(self.wires))
 
     def apply_circuit(self, input: torch.Tensor, label: torch.Tensor) -> torch.Tensor:
@@ -321,6 +327,7 @@ class QDenseDirectedReupload(torch.nn.Module):
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x, y)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
+        
         return x
 
     @override
@@ -396,9 +403,11 @@ class QDense4StatesUndirected(torch.nn.Module):
         assert x.ndim == 4, (
             f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"
         )
+        
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x, reps, other_node)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
+        
         return x
 
     @override
@@ -475,24 +484,30 @@ class QDense4StatesAncilla(torch.nn.Module):
         super().__init__()
         self.directed = directed
         self.qdepth = qdepth
+        
         if isinstance(shape, int):
             shape = (shape, shape)
+        
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height)) + 1
         self.num_reuploads = num_reuploads
+        
         self.weights = torch.nn.ParameterList()
+        
         for i in np.array_split(np.arange(qdepth), num_reuploads):
             weight_shape = qml.StronglyEntanglingLayers.shape(len(i), self.wires)
             self.weights.append(
                 torch.nn.Parameter(torch.randn(weight_shape, requires_grad=True) * 0.4)
             )
+        
         self.qnode = qml.QNode(
             func=self.circuit,
             device=qml.device("default.qubit", wires=self.wires),
             interface="torch",
             diff_method="backprop",
         )
+        
         assert shape[0] * shape[1] == 2 ** (self.wires - 1), (
             "Shape must be compatible with number of wires. "
             f"{shape[0]}*{shape[1]} != 2**({self.wires}-1). "
@@ -501,6 +516,7 @@ class QDense4StatesAncilla(torch.nn.Module):
 
     def circuit(self, x: torch.Tensor, label: torch.Tensor):
         qml.QubitStateVector(state=x, wires=range(self.wires - 1))
+        
         for w in self.weights:
             qml.RX(
                 phi=label,  # type: ignore
@@ -509,6 +525,7 @@ class QDense4StatesAncilla(torch.nn.Module):
             qml.StronglyEntanglingLayers(
                 weights=qw_map.tanh(w), wires=range(self.wires)
             )
+        
         return qml.state()
 
     def apply_circuit(
@@ -541,9 +558,11 @@ class QDense4StatesAncilla(torch.nn.Module):
         assert x.ndim == 4, (
             f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"
         )
+        
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.apply_circuit(x, y)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=self.width, h=self.height)
+        
         return x
 
     def __reupload_str(self) -> str:
@@ -552,15 +571,19 @@ class QDense4StatesAncilla(torch.nn.Module):
     def sample(self, first_x, num_repeats=10, labels=None):
         first_x = einops.rearrange(first_x, "b 1 w h -> b (w h)")
         first_x /= torch.linalg.norm(first_x, dim=-1, keepdim=True)
+        
         cf = circuits.CircuitFactory(self.wires)
         qn = cf.sampling_qnode_with_swap(num_repeats=num_repeats, has_reuploads=True)
+        
         with torch.no_grad():
             sample = qn(first_x, self.weights, labels)
             sample = sample.abs().detach().cpu()
+        
         sample = einops.rearrange(
             sample, "b (w h drop) -> drop b 1 w h", w=self.width, h=self.height
         )[0]
         sample /= einops.reduce(sample, "b 1 w h -> b 1 () ()", reduction="max")
+        
         return sample
 
     @override

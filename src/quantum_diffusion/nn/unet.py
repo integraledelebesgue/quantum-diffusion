@@ -74,11 +74,14 @@ class UpBlock(torch.nn.Module):
     @override
     def forward(self, from_down: torch.Tensor, from_up: torch.Tensor) -> torch.Tensor:
         from_up = self.up_conv(from_up)
+        
         from_down, from_up = autopad(
             from_down, from_up
         )  # Pad from_up to match from_down
+        
         x = torch.cat([from_up, from_down], dim=1)
         x = self.net(x)
+        
         return x
 
 
@@ -118,6 +121,7 @@ class DownBlock(torch.nn.Module):
             torch.nn.BatchNorm2d(self.out_channels),
             torch.nn.ReLU(),
         )
+        
         if self.pooling:
             self.pooling_layer = torch.nn.MaxPool2d(kernel_size=2, stride=2)
 
@@ -125,8 +129,10 @@ class DownBlock(torch.nn.Module):
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         x = self.net(x)
         before_pool = x
+        
         if self.pooling:
             x = self.pooling_layer(x)
+        
         return x, before_pool
 
 
@@ -146,9 +152,12 @@ class UNetUndirected(torch.nn.Module):
         self.depth = depth
         self.start_channels = start_channels
         self.qdepth = qdepth
+        
         assert self.depth > 0, "Depth must be greater than 0"
+        
         out_channel = -1  # to suppress warnings about uninitialized variables
         down_blocks = []
+        
         for i in range(self.depth):
             in_channel = 1 if i == 0 else out_channel  # 1 for the first layer
             out_channel = self.start_channels * 2**i
@@ -158,6 +167,7 @@ class UNetUndirected(torch.nn.Module):
             )
 
         up_blocks = []
+        
         for _ in range(self.depth - 1):
             in_channel = out_channel  # set the input channel to the output channel of the previous layer
             out_channel = out_channel // 2
@@ -176,6 +186,7 @@ class UNetUndirected(torch.nn.Module):
     @override
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         encoder_outputs = []  # list of skip connections
+        
         for _, block in enumerate(self.down_blocks):
             x, before_pool = block(x)
             encoder_outputs.append(before_pool)
@@ -218,9 +229,12 @@ class UnetDirected(torch.nn.Module):
         self.depth = depth
         self.start_channels = start_channels
         self.qdepth = qdepth
+        
         assert self.depth > 0, "Depth must be greater than 0"
+        
         out_channel = -1  # to suppress warnings about uninitialized variables
         down_blocks = []
+        
         for i in range(self.depth):
             in_channel = 1 if i == 0 else out_channel  # 1 for the first layer
             out_channel = self.start_channels * 2**i
@@ -230,6 +244,7 @@ class UnetDirected(torch.nn.Module):
             )
 
         up_blocks = []
+        
         for _ in range(self.depth - 1):
             in_channel = out_channel  # set the input channel to the output channel of the previous layer
             out_channel = out_channel // 2
@@ -251,6 +266,7 @@ class UnetDirected(torch.nn.Module):
         masked_x = x + mask
 
         encoder_outputs = []  # list of skip connections
+        
         for _, block in enumerate(self.down_blocks):
             masked_x, before_pool = block(masked_x)
             encoder_outputs.append(before_pool)

@@ -81,9 +81,12 @@ class UNetUndirectedS(torch.nn.Module):
         self.depth = depth
         self.start_channels = start_channels
         self.qdepth = qdepth
+        
         assert self.depth > 0, "Depth must be greater than 0"
+        
         out_channel = -1  # to suppress warnings about uninitialized variables
         down_blocks = []
+        
         for i in range(self.depth):
             in_channel = 1 if i == 0 else out_channel  # 1 for the first layer
             out_channel = self.start_channels * 2**i
@@ -99,6 +102,7 @@ class UNetUndirectedS(torch.nn.Module):
             )
 
         up_blocks = []
+        
         for _ in range(self.depth - 1):
             in_channel = out_channel  # set the input channel to the output channel of the previous layer
             out_channel = out_channel // 2
@@ -124,6 +128,7 @@ class UNetUndirectedS(torch.nn.Module):
     @override
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         encoder_outputs = []  # list of skip connections
+        
         for _, block in enumerate(self.down_blocks):
             x, before_pool = block.forward(x)
             encoder_outputs.append(before_pool)
@@ -166,9 +171,12 @@ class UnetDirectedS(torch.nn.Module):
         self.depth = depth
         self.start_channels = start_channels
         self.qdepth = qdepth
+        
         assert self.depth > 0, "Depth must be greater than 0"
+        
         out_channel = -1  # to suppress warnings about uninitialized variables
         down_blocks = []
+        
         for i in range(self.depth):
             in_channel = 1 if i == 0 else out_channel  # 1 for the first layer
             out_channel = self.start_channels * 2**i
@@ -184,6 +192,7 @@ class UnetDirectedS(torch.nn.Module):
             )
 
         up_blocks = []
+        
         for _ in range(self.depth - 1):
             in_channel = out_channel  # set the input channel to the output channel of the previous layer
             out_channel = out_channel // 2
@@ -212,6 +221,7 @@ class UnetDirectedS(torch.nn.Module):
         masked_x = x + mask
 
         encoder_outputs = []  # list of skip connections
+        
         for _, block in enumerate(self.down_blocks):
             masked_x, before_pool = block(masked_x)
             encoder_outputs.append(before_pool)

@@ -16,6 +16,7 @@ class DenseUndirected(torch.nn.Module):
         self.shapes = shapes
 
         layers: list[torch.nn.Module] = []
+        
         for i in range(len(shapes) - 1):
             layers.append(
                 torch.nn.Linear(in_features=shapes[i], out_features=shapes[i + 1])
@@ -27,9 +28,11 @@ class DenseUndirected(torch.nn.Module):
     @override
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         _, _, w, h = x.shape
+        
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.net.forward(x)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=w, h=h)
+        
         return x
 
     @override
@@ -56,6 +59,7 @@ class DenseDirected(torch.nn.Module):
         shapes[0] += 1  # Add label
 
         layers: list[torch.nn.Module] = []
+        
         for i in range(len(shapes) - 1):
             layers.append(
                 torch.nn.Linear(in_features=shapes[i], out_features=shapes[i + 1])
@@ -68,10 +72,12 @@ class DenseDirected(torch.nn.Module):
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         _, _, w, h = x.shape
         y = y.unsqueeze(-1)
+        
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = torch.cat((x, y), dim=1)
         x = self.net(x)
         x = einops.rearrange(x, "b (w h) -> b 1 w h", w=w, h=h)
+        
         return x
 
     @override

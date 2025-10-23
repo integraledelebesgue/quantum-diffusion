@@ -125,6 +125,7 @@ class Diffusion(torch.nn.Module):
         """ " Samples from the model for n_iters iterations."""
         if first_x is None:
             first_x = torch.rand((10, 1, self.width, self.height))
+        
         if self.on_states:
             return self._sample_on_states(n_iters, first_x, only_last, labels=labels)
 
@@ -155,6 +156,7 @@ class Diffusion(torch.nn.Module):
         output = einops.rearrange(
             output, "iters batch 1 height width -> (iters height) (batch width)"
         )
+        
         return output
 
     def _sample_on_states(
@@ -180,11 +182,14 @@ class Diffusion(torch.nn.Module):
             height=self.height,
             width=self.width,
         )
+        
         vars = sample.var(dim=1)
+        
         sample = einops.rearrange(
             sample, "iters batch height width -> (iters height) (batch width)"
         )
         vars = einops.rearrange(vars, "iters height width -> (iters height) (width)")
+        
         return sample, vars
 
     def save_name(self):
