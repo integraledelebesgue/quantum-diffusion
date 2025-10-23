@@ -7,11 +7,12 @@ import torch
 import tqdm
 from loguru import logger
 
-from . import data, models, nn, noise
+from . import data, nn, noise
+from .diffusion import Diffusion
 
 
 def train(
-    diffusion: models.Diffusion,
+    diffusion: Diffusion,
     ds: torch.utils.data.DataLoader[tuple[torch.Tensor, ...]],
     epochs: int,
     tau: int,
@@ -30,7 +31,7 @@ def train(
 
         x: torch.Tensor
         y: torch.Tensor
-        
+
         for x, y in ds:
             opt.zero_grad()
             batch_loss = diffusion.forward(x, y, tau)
@@ -52,7 +53,7 @@ def train(
     torch.save(diffusion.state_dict(), sp)
 
 
-def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None:
+def test(diffusion: Diffusion, tau: int, save_path: pathlib.Path) -> None:
     logger.info("Testing model")
     diffusion.eval()
 
@@ -208,7 +209,7 @@ def main(
 
     if device == "cuda":
         logger.warning("CUDA performance is worse than CPU for most models.")
-        
+
         if not torch.cuda.is_available():
             logger.warning("CUDA is not available, using CPU.")
             device = "cpu"
@@ -236,7 +237,7 @@ def main(
 
     net = nn.get_by_name(model, eval(model_parameters))
 
-    diffusion = models.Diffusion(
+    diffusion = Diffusion(
         net=net,
         shape=(height, width),
         noise_function=noise.add_normal_noise_multiple,
