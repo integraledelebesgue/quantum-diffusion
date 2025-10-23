@@ -37,6 +37,20 @@ build-backend = "hatchling.build"
 quantum-diffusion = "quantum_diffusion:main"
 
 [tool.basedpyright]
+exclude = [".venv"]
+typeCheckingMode = "standard"
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+deprecateTypingAliases = true
+enableReachabilityAnalysis = true
+enableExperimentalFeatures = false
+reportUnusedImport = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+reportDuplicateImport = true
+reportDeprecated = true
 reportUnusedCallResult = false
 reportMissingTypeStubs = false
 reportUntypedFunctionDecorator = false
