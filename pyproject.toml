@@ -39,6 +39,7 @@ quantum-diffusion = "quantum_diffusion:main"
 [tool.basedpyright]
 reportUnusedCallResult = false
 reportMissingTypeStubs = false
+reportUntypedFunctionDecorator = false
 
 [dependency-groups]
 dev = [

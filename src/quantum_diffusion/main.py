@@ -56,12 +56,7 @@ def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None
     diffusion.eval()
 
     first_x = torch.rand(15, 1, 8, 8) * 0.5 + 0.75
-
-    output = diffusion.sample(
-        first_x=first_x,
-        n_iters=tau * 2,
-        show_progress=True,
-    ).cpu()
+    output = diffusion.sample(first_x=first_x, n_iters=tau * 2).cpu()
 
     if save_path.is_dir():
         save_path = save_path / f"{diffusion.save_name()}.png"

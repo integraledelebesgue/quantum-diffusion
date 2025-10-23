@@ -1,5 +1,5 @@
 from collections.abc import Callable
-from typing import Literal, Protocol
+from typing import Literal, Protocol, cast
 
 import einops
 import torch
@@ -93,24 +93,31 @@ class Diffusion(torch.nn.Module):
         match self.prediction_goal:
             case "data":
                 batches_reconstructed = output
-                batch_loss = self.loss(batches_reconstructed, batches_clean)
+                batch_loss = cast(
+                    torch.Tensor,
+                    self.loss.forward(batches_reconstructed, batches_clean),
+                )
                 batch_loss_mean = batch_loss.mean()
 
             case "noise":
                 predicted_noise = output
                 predicted_noise = (predicted_noise - 0.5) * 0.1
                 real_noise = batches_noisy - batches_clean
-                batch_loss = self.loss(predicted_noise, real_noise)
+
+                batch_loss = cast(
+                    torch.Tensor,
+                    self.loss.forward(predicted_noise, real_noise),
+                )
                 batch_loss_mean = batch_loss.mean()
 
         return batch_loss_mean
 
+    @torch.no_grad()
     def sample(
         self,
         n_iters: int,
         first_x: torch.Tensor | None = None,
         labels: torch.Tensor | None = None,
-        show_progress: bool = False,
         only_last: bool = False,
         step: int = 1,
         noise_factor: float = 1.0,
@@ -121,40 +128,34 @@ class Diffusion(torch.nn.Module):
         if self.on_states:
             return self._sample_on_states(n_iters, first_x, only_last, labels=labels)
 
-        if labels is None and self.directed:
+        if labels is None:
             labels = torch.zeros((first_x.shape[0], 1))
 
-        outp = [first_x]
+        output = [first_x]
+        x = first_x
 
-        with torch.no_grad():
-            x = first_x
+        for i in range(n_iters):
+            predicted = self.net.forward(x, labels)
 
-            for i in range(n_iters):
-                if self.directed:
-                    predicted = self.net(x, labels)
-                else:
-                    predicted = self.net(x)
+            if self.prediction_goal == "data":
+                x = predicted
+            else:
+                predicted = (predicted - 0.5) * 0.1 * noise_factor
+                new_x = x - predicted
+                new_x = torch.clamp(new_x, 0, 1)
+                x = new_x
 
-                if self.prediction_goal == "data":
-                    x = predicted
-                else:
-                    predicted = (predicted - 0.5) * 0.1 * noise_factor
-                    new_x = x - predicted
-                    new_x = torch.clamp(new_x, 0, 1)
-                    x = new_x
-
-                if i % step == 0:
-                    outp.append(x)
+            if i % step == 0:
+                output.append(x)
 
         if only_last:
-            return outp[-1]
-        else:
-            outp = torch.stack(outp)
-            outp = einops.rearrange(
-                outp, "iters batch 1 height width -> (iters height) (batch width)"
-            )
+            return output[-1]
 
-            return outp
+        output = torch.stack(output)
+        output = einops.rearrange(
+            output, "iters batch 1 height width -> (iters height) (batch width)"
+        )
+        return output
 
     def _sample_on_states(
         self,
