@@ -6,10 +6,9 @@ Some are not used anymore, but are kept for reference and marked as deprecated.
 from collections.abc import Sequence
 from typing import Any, Literal
 
-import torch
-
 from .conv import DeepConvDirectedMulti, DeepConvDirectedSingle, DeepConvUndirected
 from .dense import DenseDirected, DenseUndirected
+from .interface import DenoisingNetwork
 from .qconv import QConv2d
 from .qdense import (
     QDense2Undirected,
@@ -69,7 +68,7 @@ Model = Literal[
 ]
 
 
-def get_by_name(model: Model, parameters: Sequence[Any]) -> torch.nn.Module:
+def get_by_name(model: Model, parameters: Sequence[Any]) -> DenoisingNetwork:
     match model:
         case "DeepConvDirectedMulti":
             return DeepConvDirectedMulti(*parameters)

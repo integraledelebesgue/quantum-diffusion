@@ -1,27 +1,11 @@
 from collections.abc import Callable
-from typing import Literal, Protocol, cast
+from typing import Literal, cast
 
 import einops
 import torch
 from typing_extensions import override
 
-
-class GuidedDenoisingNetwork(Protocol):
-    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor: ...
-    def save_name(self) -> str: ...
-
-
-class UnguidedDenoisingNetwork(Protocol):
-    def forward(
-        self,
-        x: torch.Tensor,
-        y: torch.Tensor | None = None,
-    ) -> torch.Tensor: ...
-
-    def save_name(self) -> str: ...
-
-
-DenoisingNetwork = GuidedDenoisingNetwork | UnguidedDenoisingNetwork
+from .nn.interface import DenoisingNetwork
 
 
 class Diffusion(torch.nn.Module):
@@ -125,7 +109,7 @@ class Diffusion(torch.nn.Module):
         """ " Samples from the model for n_iters iterations."""
         if first_x is None:
             first_x = torch.rand((10, 1, self.width, self.height))
-        
+
         if self.on_states:
             return self._sample_on_states(n_iters, first_x, only_last, labels=labels)
 
@@ -156,7 +140,7 @@ class Diffusion(torch.nn.Module):
         output = einops.rearrange(
             output, "iters batch 1 height width -> (iters height) (batch width)"
         )
-        
+
         return output
 
     def _sample_on_states(
@@ -182,14 +166,14 @@ class Diffusion(torch.nn.Module):
             height=self.height,
             width=self.width,
         )
-        
+
         vars = sample.var(dim=1)
-        
+
         sample = einops.rearrange(
             sample, "iters batch height width -> (iters height) (batch width)"
         )
         vars = einops.rearrange(vars, "iters height width -> (iters height) (width)")
-        
+
         return sample, vars
 
     def save_name(self):
