@@ -27,9 +27,11 @@ def train(
     for _ in range(epochs):
         epoch_loss = 0.0
 
+        x: torch.Tensor
+        y: torch.Tensor
         for x, y in ds:
             opt.zero_grad()
-            batch_loss, _ = diff(x=x, y=y, T=tau, verbose=True)
+            batch_loss = diff.forward(x, y, tau)
             epoch_loss += batch_loss.mean()
             opt.step()
 
@@ -209,7 +211,7 @@ def main(
     diff = models.Diffusion(
         net=net,
         shape=(height, width),
-        noise_f=noise.add_normal_noise_multiple,
+        noise_function=noise.add_normal_noise_multiple,
         prediction_goal=target,
         directed=guidance,
         loss=torch.nn.MSELoss(),
