@@ -112,8 +112,15 @@ def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None
 @click.option(
     "--load-path",
     type=pathlib.Path,
-    default=None,
+    required=False,
     help="Path to load model from. If not provided, a new model will be trained and saved in --save-path.",
+)
+@click.option(
+    "--continue-training",
+    type=bool,
+    is_flag=True,
+    default=False,
+    help="Continue the training of the model loaded using --load-path.",
 )
 @click.option(
     "--model",
@@ -177,6 +184,7 @@ def main(
     save_path: pathlib.Path,
     seed: int | None,
     load_path: pathlib.Path | None,
+    continue_training: bool,
     model: str,
     model_parameters: str,
     guidance: bool,
@@ -227,22 +235,23 @@ def main(
         loss=torch.nn.MSELoss(),
     ).to(device)
 
-    run_train = False
+    if load_path is None:
+        train(diffusion, ds, epochs, tau, lr, save_path)
+        test(diffusion, tau, save_path)
+        return
 
-    if load_path is not None:
-        # print("Loading model")
-        try:
-            if load_path.suffix == ".pt":
-                diffusion.load_state_dict(torch.load(load_path))
-            else:
-                lp = load_path / f"{diffusion.save_name()}.pt"
-                diffusion.load_state_dict(torch.load(lp))
+    if load_path.is_dir():
+        load_path = load_path / f"{diffusion.save_name()}.pt"
 
-        except FileNotFoundError:
-            logger.error("Failed to load model")
-            run_train = True
+    if not load_path.exists():
+        raise FileNotFoundError(f"Saved model at {load_path} does not exist")
 
-    if load_path is None or run_train:
+    if not (load_path.is_file() and load_path.suffix == ".pt"):
+        raise FileNotFoundError(f"Expected .pt file at {load_path}")
+
+    diffusion.load_state_dict(torch.load(load_path))
+
+    if continue_training:
         train(diffusion, ds, epochs, tau, lr, save_path)
 
     test(diffusion, tau, save_path)
