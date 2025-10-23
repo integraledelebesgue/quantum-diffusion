@@ -136,9 +136,9 @@ def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None
     help="Constructor parameters for the model",
 )
 @click.option(
-    "--guidance/--no-guidance",
+    "--guidance",
+    is_flag=True,
     default=False,
-    show_default=True,
     help="Toggle guidance on or off.",
 )
 @click.option(
