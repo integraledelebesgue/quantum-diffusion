@@ -61,12 +61,12 @@ class _QConv2d_FAST(torch.nn.Module):
             n_layers=qdepth, n_wires=self.wires
         )
 
-        self.weights = torch.rand(template_shape, requires_grad=True)
-        self.weights = self.weights * math.pi - math.pi / 2
-        self.weights = torch.nn.Parameter(self.weights)
+        weights = torch.rand(template_shape, requires_grad=True)
+        weights = weights * math.pi - math.pi / 2
+        self.weights = torch.nn.Parameter(weights)
 
         self.qnode = qml.QNode(
-            func=self._circuit,
+            func=self.circuit,
             device=qml.device("default.qubit", wires=self.wires),
             cache=True,
             cachesize=int(1e6),
@@ -77,26 +77,29 @@ class _QConv2d_FAST(torch.nn.Module):
         self.sample_qnode = None
         self.sample_matrix = None
 
-    def _circuit(self, features: torch.Tensor):
+    def circuit(self, x: torch.Tensor):
         qml.AmplitudeEmbedding(
-            features=features, wires=range(self.wires), pad_with=0.5, normalize=True
+            features=x, wires=range(self.wires), pad_with=0.5, normalize=True
         )
         qml.StronglyEntanglingLayers(qw_map.tanh(self.weights), wires=range(self.wires))
         return qml.probs(wires=range(self.wires))
 
-    def _post_process(self, quantum_probs: torch.Tensor) -> torch.Tensor:
+    def apply_circuit(self, input: torch.Tensor) -> torch.Tensor:
+        out = self.qnode(input)
+        assert isinstance(out, torch.Tensor)
+
         # Scale to approximatly [0, 1]
-        quantum_probs = quantum_probs * quantum_probs.shape[-1] * 0.5
+        out = out * out.shape[-1] * 0.5
 
         # Clamp to [0, 1] to avoid numerical errors
-        quantum_probs = torch.clamp(quantum_probs, 0.0, 1.0)
+        out = torch.clamp(out, 0.0, 1.0)
 
-        quantum_probs = quantum_probs[:, ::2]  # Drop all probabilities of |1>
+        out = out[:, ::2]  # Drop all probabilities of |1>
 
         # Select the first out_channels probabilities
-        quantum_probs = quantum_probs[:, : self.out_channels]
+        out = out[:, : self.out_channels]
 
-        return quantum_probs
+        return out
 
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         b, c, h_in, w_in = x.shape
@@ -108,7 +111,7 @@ class _QConv2d_FAST(torch.nn.Module):
         x = self.unfold(x)
         x = einops.rearrange(x, "batch channel feat -> (batch feat) channel")
         x = x + 0.1
-        x = self._post_process(x)
+        x = self.apply_circuit(x)
         x = x.float()
         x = einops.rearrange(
             x,
@@ -213,7 +216,8 @@ class _QConv2d_MEDIUM(torch.nn.Module):
         self.wires = max(min_wires_inp, min_wires_outp, 1)
 
         template_shape = qml.StronglyEntanglingLayers.shape(
-            n_layers=qdepth, n_wires=self.wires
+            n_layers=qdepth,
+            n_wires=self.wires,
         )
 
         self.weights = torch.nn.ParameterList(
@@ -234,7 +238,7 @@ class _QConv2d_MEDIUM(torch.nn.Module):
         )
 
         self._qnode = qml.QNode(
-            func=self._circuit,
+            func=self.circuit,
             device=qml.device("default.qubit", wires=self.wires),
             cache=True,
             cachesize=int(1e6),
@@ -247,23 +251,26 @@ class _QConv2d_MEDIUM(torch.nn.Module):
             [i * 2 for i in range(self.in_channels)],
         )
 
-    def _circuit(self, inp):
+    def circuit(self, x: torch.Tensor):
         for ic in range(self.in_channels):
-            qml.MottonenStatePreparation(inp[:, ic], wires=range(self.wires))
+            qml.MottonenStatePreparation(x[:, ic], wires=range(self.wires))
             qml.StronglyEntanglingLayers(self.weights[ic], wires=range(self.wires))
 
         return qml.probs(wires=range(self.wires))
 
-    def post_process(self, quantum_probs: torch.Tensor) -> torch.Tensor:
+    def apply_circuit(self, input: torch.Tensor) -> torch.Tensor:
+        out = self.qnode(input)
+        assert isinstance(out, torch.Tensor)
+
         # Scale to approximatly [0, 1]
-        quantum_probs = quantum_probs * quantum_probs.shape[-1] * 0.5
+        out = out * out.shape[-1] * 0.5
 
         # Clamp to [0, 1] to avoid numerical errors
-        quantum_probs = torch.clamp(quantum_probs, 0.0, 1.0)
+        out = torch.clamp(out, 0.0, 1.0)
 
-        quantum_probs = quantum_probs[..., : self.out_channels]
+        out = out[..., : self.out_channels]
 
-        return quantum_probs
+        return out
 
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         b, c, h_in, w_in = x.shape
@@ -279,8 +286,7 @@ class _QConv2d_MEDIUM(torch.nn.Module):
         x = einops.rearrange(x, "b c bh bw k0 k1 -> (b bh bw) c (k0 k1)")
         x = torch.nn.functional.pad(x, self.unfolded_padding_size)
         x = torch.nn.functional.normalize(x, dim=-1, p=2)
-        x = self.qnode(x)
-        x = self.post_process(x)
+        x = self.apply_circuit(x)
         x = einops.rearrange(x, "(b h2 w2) c -> b c h2 w2", b=b, h2=h_out, w2=w_out)
 
         return x
