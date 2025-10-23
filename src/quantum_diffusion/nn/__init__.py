@@ -30,6 +30,25 @@ from .utils import (
     sample_from_qiskit,
 )
 
+MODELS = (
+    "DeepConvDirectedMulti",
+    "DeepConvDirectedSingle",
+    "DeepConvUndirected",
+    "DenseDirected",
+    "DenseUndirected",
+    "QConv2d",
+    "QDense2Undirected",
+    "QDense4StatesAncilla",
+    "QDense4StatesUndirected",
+    "QDenseDirected",
+    "QDenseDirectedReupload",
+    "QDenseUndirected",
+    "UnetDirected",
+    "UNetUndirected",
+    "UnetDirectedS",
+    "UNetUndirectedS",
+)
+
 Model = Literal[
     "DeepConvDirectedMulti",
     "DeepConvDirectedSingle",

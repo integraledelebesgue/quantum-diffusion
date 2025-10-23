@@ -7,6 +7,14 @@ import torchvision
 import torchvision.transforms as T
 from sklearn import datasets
 
+DATASETS = (
+    "mnist_8x8",
+    "mnist_28x28",
+    "mnist_32x32",
+    "cifar10_32x32",
+    "fashion_28x28",
+)
+
 Dataset = Literal[
     "mnist_8x8",
     "mnist_28x28",

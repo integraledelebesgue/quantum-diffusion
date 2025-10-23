@@ -1,4 +1,5 @@
 import pathlib
+from typing import Literal
 
 import click
 import matplotlib.pyplot as plt
@@ -76,7 +77,7 @@ def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None
 @click.command(help="Quantum Denoising Diffusion Model CLI")
 @click.option(
     "--dataset",
-    type=str,
+    type=click.Choice(data.DATASETS),
     default="mnist_8x8",
     show_default=True,
     help="Dataset to use",
@@ -95,7 +96,7 @@ def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None
 )
 @click.option(
     "--target",
-    type=click.Choice(["noise", "data"], case_sensitive=False),
+    type=click.Choice(["noise", "data"]),
     default="data",
     show_default=True,
     help="Generate 'noise' or 'data'.",
@@ -128,7 +129,7 @@ def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None
 )
 @click.option(
     "--model",
-    type=str,
+    type=click.Choice(nn.MODELS),
     default="QDenseUndirected",
     show_default=True,
     help=("Model name"),
@@ -188,15 +189,15 @@ def test(diffusion: models.Diffusion, tau: int, save_path: pathlib.Path) -> None
     help="Disable all interactive features (progress bars, preview windows, etc.).",
 )
 def main(
-    dataset: str,
+    dataset: data.Dataset,
     dataset_location: pathlib.Path | None,
     n_classes: int,
-    target: str,
+    target: Literal["data", "noise"],
     save_path: pathlib.Path,
     seed: int | None,
     load_path: pathlib.Path | None,
     continue_training: bool,
-    model: str,
+    model: nn.Model,
     model_parameters: str,
     guidance: bool,
     device: str,
