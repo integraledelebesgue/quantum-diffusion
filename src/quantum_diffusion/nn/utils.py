@@ -91,16 +91,14 @@ def circuit_to_qasm(
 ) -> str:
     import pennylane as qml
 
-    dummy_qdev = qml.device("qiskit.aer", wires=wires)  # Create a dummy device
-
     def _dummy_circuit():
         qml.AngleEmbedding(inp, wires=range(wires))
         qml.StronglyEntanglingLayers(weights=weights, wires=range(wires))
         return qml.probs(wires=range(wires))
 
-    dummy_qnode = qml.QNode(_dummy_circuit, dummy_qdev)  # Create a dummy qnode
+    dummy_qnode = qml.QNode(_dummy_circuit, qml.device("qiskit.aer", wires=wires))
     dummy_qnode()  # Execute the circuit once
-    qasm_str = str(dummy_qdev._circuit.qasm(formatted=False))
+    qasm_str = str(dummy_qnode.device._circuit.qasm(formatted=False))
     return qasm_str
 
 

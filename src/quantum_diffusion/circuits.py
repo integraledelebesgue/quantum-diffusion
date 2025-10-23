@@ -9,7 +9,6 @@ import torch
 class CircuitFactory:
     def __init__(self, wires: int) -> None:
         self.wires = wires
-        self.dev = qml.device("default.qubit", wires=wires)
 
     def classic_circuit(
         self, label: torch.Tensor | float, inp: torch.Tensor, weights: torch.Tensor
@@ -92,7 +91,7 @@ class CircuitFactory:
 
         return qml.QNode(
             func=__circuit,
-            device=self.dev,
+            device=qml.device("default.qubit", wires=self.wires),
             interface="torch",
             diff_method=None,
         )
@@ -141,7 +140,7 @@ class CircuitFactory:
     def get_qnode(self, circuit_function: typing.Callable) -> qml.QNode:
         return qml.QNode(
             func=circuit_function,
-            device=self.dev,
+            device=qml.device("default.qubit", wires=self.wires),
             interface="torch",
             diff_method="backprop",
         )

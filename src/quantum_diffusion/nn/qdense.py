@@ -22,7 +22,6 @@ class QDenseUndirected(torch.nn.Module):
 
     weights: torch.nn.Parameter
 
-    qdev: Any
     qnode: qml.QNode
 
     def __init__(self, qdepth: int, shape: tuple[int, int] | int) -> None:
@@ -41,10 +40,9 @@ class QDenseUndirected(torch.nn.Module):
             torch.randn(weight_shape, requires_grad=True) * 0.4
         )
 
-        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.qnode = qml.QNode(
             func=self._circuit,
-            device=self.qdev,
+            device=qml.device("default.qubit", wires=self.wires),
             interface="torch",
             diff_method="backprop",
         )
@@ -94,7 +92,6 @@ class QDense2Undirected(torch.nn.Module):
 
     weights: torch.nn.Parameter
 
-    qdev: Any
     qnode: qml.QNode
 
     def __init__(
@@ -119,10 +116,9 @@ class QDense2Undirected(torch.nn.Module):
             torch.randn(weight_shape, requires_grad=True) * 0.4
         )
 
-        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.qnode = qml.QNode(
             func=self._circuit,
-            device=self.qdev,
+            device=qml.device("default.qubit", wires=self.wires),
             interface="torch",
             diff_method="backprop",
         )
@@ -200,7 +196,6 @@ class QDenseDirectedReupload(torch.nn.Module):
 
     weights: torch.nn.ParameterList
 
-    qdev: Any
     qnode: qml.QNode
 
     def __init__(
@@ -219,7 +214,6 @@ class QDenseDirectedReupload(torch.nn.Module):
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height)) + 1
-        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.num_reuploads = num_reuploads
 
         self.weights = torch.nn.ParameterList()
@@ -231,7 +225,7 @@ class QDenseDirectedReupload(torch.nn.Module):
 
         self.qnode = qml.QNode(
             func=self._circuit,
-            device=self.qdev,
+            device=qml.device("default.qubit", wires=self.wires),
             interface="torch",
             diff_method="backprop",
         )
@@ -293,10 +287,9 @@ class QDense4StatesUndirected(torch.nn.Module):
             torch.randn(weight_shape, requires_grad=True) * 0.4
         )
 
-        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.qnode = qml.QNode(
             func=self._circuit,
-            device=self.qdev,
+            device=qml.device("default.qubit", wires=self.wires),
             interface="torch",
             diff_method="backprop",
         )
@@ -376,7 +369,7 @@ class QDense4StatesUndirected(torch.nn.Module):
             return qml.probs(wires=range(self.wires))
 
         if device is None:
-            device = self.qdev
+            device = qml.device("default.qubit", wires=self.wires)
         sampling_qnode = qml.QNode(
             func=_sampling_circuit, device=device, interface="torch", diff_method="best"
         )
@@ -403,7 +396,6 @@ class QDense4StatesAncilla(torch.nn.Module):
         self.width, self.height = shape
         self.pixels = self.width * self.height
         self.wires = math.ceil(math.log2(self.width * self.height)) + 1
-        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.num_reuploads = num_reuploads
         self.weights = torch.nn.ParameterList()
         for i in np.array_split(np.arange(qdepth), num_reuploads):
@@ -413,7 +405,7 @@ class QDense4StatesAncilla(torch.nn.Module):
             )
         self.qnode = qml.QNode(
             func=self._circuit,
-            device=self.qdev,
+            device=qml.device("default.qubit", wires=self.wires),
             interface="torch",
             diff_method="backprop",
         )

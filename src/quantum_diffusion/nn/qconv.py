@@ -21,7 +21,6 @@ class _QConv2d_FAST(torch.nn.Module):
     unfold: torch.nn.Unfold
     weights: torch.nn.Parameter
 
-    qdev: Any
     qnode: qml.QNode
 
     sample_qnode: qml.QNode | None
@@ -66,10 +65,9 @@ class _QConv2d_FAST(torch.nn.Module):
         self.weights = self.weights * math.pi - math.pi / 2
         self.weights = torch.nn.Parameter(self.weights)
 
-        self.qdev = qml.device("default.qubit", wires=self.wires)
         self.qnode = qml.QNode(
             func=self._circuit,
-            device=self.qdev,
+            device=qml.device("default.qubit", wires=self.wires),
             cache=True,
             cachesize=int(1e6),
             interface="torch",
@@ -153,7 +151,7 @@ class _QConv2d_FAST(torch.nn.Module):
 
             self.sample_qnode = qml.QNode(
                 func=_sample_circuit,
-                device=self.qdev,
+                device=qml.device("default.qubit", wires=self.wires),
                 cache=True,
                 cachesize=int(1e6),
                 interface="torch",
@@ -182,7 +180,6 @@ class _QConv2d_MEDIUM(torch.nn.Module):
     weights: torch.nn.ParameterList
     pad: torch.nn.ConstantPad2d
 
-    qdev: Any
     _qnode: qml.QNode
     qnode: Any
 
@@ -236,12 +233,9 @@ class _QConv2d_MEDIUM(torch.nn.Module):
             2**self.wires - self.kernel_size[0] * self.kernel_size[1],
         )
 
-        # Every convulutional layer has its own device
-        self.qdev = qml.device("default.qubit", wires=self.wires)
-
         self._qnode = qml.QNode(
             func=self._circuit,
-            device=self.qdev,
+            device=qml.device("default.qubit", wires=self.wires),
             cache=True,
             cachesize=int(1e6),
             interface="torch",
@@ -310,7 +304,6 @@ class _QConv2d_SLOW(torch.nn.Module):
     weights: torch.nn.ParameterList
     unfolded_pad: torch.nn.ConstantPad1d
 
-    qdev: Any
     qnode: qml.QNode
 
     def __init__(
@@ -354,13 +347,9 @@ class _QConv2d_SLOW(torch.nn.Module):
         pad_size = 2**self.wires - self.kernel_size[0] * self.kernel_size[1]
         self.unfolded_pad = torch.nn.ConstantPad1d((0, pad_size), 0.01)
 
-        # Every convulutional layer has its own device
-        self.qdev = qml.device("default.qubit", wires=self.wires)
-
-        # Every convulutional layer has its own qnode
         self.qnode = qml.QNode(
             func=self._circuit,
-            device=self.qdev,
+            device=qml.device("default.qubit", wires=self.wires),
             cache=True,
             cachesize=int(1e6),  # Deactivate caching to avoid memory issues
             interface="torch",
