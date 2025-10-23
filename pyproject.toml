@@ -44,4 +44,5 @@ dev = [
     "icecream>=2.1.8",
     "ipykernel>=7.0.1",
     "jupyter>=1.1.1",
+    "basedpyright>=1.23.0",
 ]
