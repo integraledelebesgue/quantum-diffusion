@@ -572,8 +572,11 @@ class QDense4StatesAncilla(torch.nn.Module):
         first_x = einops.rearrange(first_x, "b 1 w h -> b (w h)")
         first_x /= torch.linalg.norm(first_x, dim=-1, keepdim=True)
         
-        cf = circuits.CircuitFactory(self.wires)
-        qn = cf.sampling_qnode_with_swap(num_repeats=num_repeats, has_reuploads=True)
+        qn = circuits.sampling_qnode_with_swap(
+            wires=self.wires,
+            num_repeats=num_repeats,
+            has_reuploads=True,
+        )
         
         with torch.no_grad():
             sample = qn(first_x, self.weights, labels)
