@@ -1,12 +1,12 @@
 import math
-import warnings
-from typing import Any, Tuple
+from typing import Any
 
 import einops
 import numpy as np
 import pennylane as qml
 import qw_map
 import torch
+from loguru import logger
 from typing_extensions import override
 
 from .. import circuits
@@ -69,7 +69,7 @@ class QDenseUndirected(torch.nn.Module):
         probs = torch.clamp(probs, 0, 1)
         return probs
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.qnode(x)
         x = self._post_process(x)
@@ -146,7 +146,7 @@ class QDense2Undirected(torch.nn.Module):
         probs = torch.clamp(probs, 0, 1)
         return probs
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         x = einops.rearrange(x, "b 1 w h -> b (w h)")
         x = self.qnode(x)
         x = self._post_process(x)
@@ -389,7 +389,11 @@ class QDense4StatesAncilla(torch.nn.Module):
     """Dense variational circuit, training on quantum states, directed or undirected, with reuploads"""
 
     def __init__(
-        self, qdepth: int, shape: Tuple[int, int], directed=True, num_reuploads=1
+        self,
+        qdepth: int,
+        shape: tuple[int, int] | int,
+        directed=True,
+        num_reuploads=1,
     ) -> None:
         super().__init__()
         self.directed = directed
@@ -428,7 +432,7 @@ class QDense4StatesAncilla(torch.nn.Module):
             )
         return qml.state()  # type: ignore
 
-    def forward(self, x: torch.Tensor, y=None) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         assert x.ndim == 4, (
             f"Input must be 4D tensor (batch, channels, width, height), but is {x.shape}"
         )
@@ -438,11 +442,11 @@ class QDense4StatesAncilla(torch.nn.Module):
         x = torch.complex(real=x, imag=torch.zeros_like(x)).to(x.device)
         if y is None:
             if self.directed:
-                warnings.warn("Model is directed, but no label was provided.")
+                logger.warning("Model is directed, but no label was provided.")
             y = torch.zeros(x.shape[0]).to(x.device)
         else:
             if not self.directed:
-                warnings.warn("Model is undirected, but a label was provided.")
+                logger.warning("Model is undirected, but a label was provided.")
         x = self.qnode(x, y)
         x = x[..., ::2]
         x = x * old_norm
@@ -466,7 +470,8 @@ class QDense4StatesAncilla(torch.nn.Module):
         sample /= einops.reduce(sample, "b 1 w h -> b 1 () ()", reduction="max")
         return sample
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         if self.directed:
             return f"QDenseDirected4States(qdepth={self.qdepth}, wires={self.wires} {self.__reupload_str()})"
         else:

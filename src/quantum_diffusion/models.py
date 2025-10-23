@@ -1,8 +1,26 @@
 from collections.abc import Callable
-from typing import Literal
+from typing import Literal, Protocol
 
 import einops
 import torch
+
+
+class GuidedDenoisingNetwork(Protocol):
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor: ...
+    def save_name(self) -> str: ...
+
+
+class UnguidedDenoisingNetwork(Protocol):
+    def forward(
+        self,
+        x: torch.Tensor,
+        y: torch.Tensor | None = None,
+    ) -> torch.Tensor: ...
+
+    def save_name(self) -> str: ...
+
+
+DenoisingNetwork = GuidedDenoisingNetwork | UnguidedDenoisingNetwork
 
 
 class Diffusion(torch.nn.Module):
@@ -14,12 +32,12 @@ class Diffusion(torch.nn.Module):
 
     noise_function: Callable[..., torch.Tensor]
 
-    net: torch.nn.Module
+    net: DenoisingNetwork
     loss: torch.nn.Module
 
     def __init__(
         self,
-        net: torch.nn.Module,
+        net: DenoisingNetwork,
         noise_function: Callable[..., torch.Tensor],
         prediction_goal: Literal["data", "noise"],
         shape: tuple[int, int],

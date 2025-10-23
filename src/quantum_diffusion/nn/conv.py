@@ -37,7 +37,7 @@ class DeepConvUndirected(torch.nn.Module):
         self.net = torch.nn.Sequential(*layers)
         self.shape = shape
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         assert len(x.shape) == 4, "Input must be 4D tensor"
         return self.net.forward(x)
 

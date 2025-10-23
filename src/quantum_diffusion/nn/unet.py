@@ -170,7 +170,7 @@ class UNetUndirected(torch.nn.Module):
             qdepth=qdepth,
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         encoder_outputs = []  # list of skip connections
         for _, block in enumerate(self.down_blocks):
             x, before_pool = block(x)

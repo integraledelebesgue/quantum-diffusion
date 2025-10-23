@@ -100,7 +100,7 @@ class _QConv2d_FAST(torch.nn.Module):
 
         return quantum_probs
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         b, c, h_in, w_in = x.shape
         assert c == self.in_channels, f"Expected {self.in_channels} channels, got {c}"
 
@@ -271,7 +271,7 @@ class _QConv2d_MEDIUM(torch.nn.Module):
 
         return quantum_probs
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         b, c, h_in, w_in = x.shape
         assert c == self.in_channels, f"Expected {self.in_channels} channels, got {c}"
 
@@ -387,7 +387,7 @@ class _QConv2d_SLOW(torch.nn.Module):
 
         return quantum_probs
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
         b, c, h_in, w_in = x.shape
         assert c == self.in_channels, f"Expected {self.in_channels} channels, got {c}"
 
