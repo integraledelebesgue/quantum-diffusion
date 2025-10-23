@@ -20,14 +20,7 @@ from .qdense import (
 )
 from .unet import UnetDirected, UNetUndirected
 from .unet_simple import UnetDirectedS, UNetUndirectedS
-from .utils import (
-    autocrop,
-    autopad,
-    circuit_to_qasm,
-    get_label_embedding,
-    repeat_qasm,
-    sample_from_qiskit,
-)
+from .utils import autopad, get_label_embedding
 
 MODELS = (
     "DeepConvDirectedMulti",
@@ -123,10 +116,6 @@ __all__ = [
     "UNetUndirected",
     "UnetDirectedS",
     "UNetUndirectedS",
-    "autocrop",
     "autopad",
-    "circuit_to_qasm",
     "get_label_embedding",
-    "repeat_qasm",
-    "sample_from_qiskit",
 ]
