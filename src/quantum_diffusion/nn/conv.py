@@ -7,6 +7,24 @@ from typing_extensions import override
 from .utils import get_label_embedding
 
 
+def build_conv_layers(channels: list[int]) -> torch.nn.Sequential:
+    """Build convolutional layers for undirected models."""
+    layers: list[torch.nn.Module] = []
+    for i in range(len(channels) - 1):
+        layers.append(
+            torch.nn.Conv2d(
+                in_channels=channels[i],
+                out_channels=channels[i + 1],
+                kernel_size=3,
+                padding=1,
+            )
+        )
+        layers.append(torch.nn.ReLU())
+
+    layers.append(torch.nn.Sigmoid())
+    return torch.nn.Sequential(*layers)
+
+
 class DeepConvUndirected(torch.nn.Module):
     """Deep Convolutional Neural Network. Undirected"""
 
@@ -19,22 +37,7 @@ class DeepConvUndirected(torch.nn.Module):
         assert channels[0] == channels[-1], "Input and output channels must be equal"
 
         self.channels = channels
-
-        layers: list[torch.nn.Module] = []
-        for i in range(len(channels) - 1):
-            layers.append(
-                torch.nn.Conv2d(
-                    in_channels=channels[i],
-                    out_channels=channels[i + 1],
-                    kernel_size=3,
-                    padding=1,
-                )
-            )
-            layers.append(torch.nn.ReLU())
-
-        layers.append(torch.nn.Sigmoid())
-
-        self.net = torch.nn.Sequential(*layers)
+        self.net = build_conv_layers(channels)
         self.shape = shape
 
     def forward(self, x: torch.Tensor, y: torch.Tensor | None = None) -> torch.Tensor:
@@ -97,7 +100,21 @@ class DeepConvDirectedMulti(torch.nn.Module):
         return f"deep_conv_directed_multi_{'_'.join(map(str, self.channels))}"
 
 
-class DeepConvDirectedSingle(DeepConvUndirected):
+class DeepConvDirectedSingle(torch.nn.Module):
+    """Deep Convolutional Neural Network. Directed (single label embedding)"""
+
+    channels: list[int]
+    shape: tuple[int, int]
+    net: torch.nn.Sequential
+
+    def __init__(self, channels: list[int], shape: tuple[int, int]) -> None:
+        super().__init__()
+        assert channels[0] == channels[-1], "Input and output channels must be equal"
+
+        self.channels = channels
+        self.net = build_conv_layers(channels)
+        self.shape = shape
+
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         assert x.ndim == 4, "Input must be 4D tensor"
 
@@ -111,6 +128,5 @@ class DeepConvDirectedSingle(DeepConvUndirected):
     def __repr__(self) -> str:
         return f"DeepConvDirectedSingle({self.net})"
 
-    @override
     def save_name(self) -> str:
         return f"deep_conv_directed_single_{'_'.join(map(str, self.channels))}"

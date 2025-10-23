@@ -163,8 +163,46 @@ class QDense2Undirected(torch.nn.Module):
         return f"qdense2_undirected_d{self.qdepth}_w{self.width}_h{self.height}{self.__strongly()}"
 
 
-class QDenseDirected(QDense2Undirected):
+class QDenseDirected(torch.nn.Module):
     """Dense variatonal circuit with label"""
+
+    qdepth: int
+    height: int
+    width: int
+    wires: int
+
+    weights: torch.nn.Parameter
+
+    qnode: qml.QNode
+
+    def __init__(
+        self,
+        qdepth: int,
+        shape: tuple[int, int] | int,
+        entangling_layer=qml.StronglyEntanglingLayers,
+    ) -> None:
+        super().__init__()
+
+        self.qdepth = qdepth
+        if isinstance(shape, int):
+            shape = (shape, shape)
+
+        self.width, self.height = shape
+        self.pixels = self.width * self.height
+        self.entangling_layer = entangling_layer
+        self.wires = math.ceil(math.log2(self.width * self.height)) + 1
+
+        weight_shape = self.entangling_layer.shape(self.qdepth, self.wires)
+        self.weights = torch.nn.Parameter(
+            torch.randn(weight_shape, requires_grad=True) * 0.4
+        )
+
+        self.qnode = qml.QNode(
+            func=self.circuit,
+            device=qml.device("default.qubit", wires=self.wires),
+            interface="torch",
+            diff_method="backprop",
+        )
 
     def circuit(self, x: torch.Tensor, label: torch.Tensor):
         qml.AmplitudeEmbedding(
