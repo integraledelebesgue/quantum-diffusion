@@ -1,0 +1,9 @@
+from typing import Protocol
+
+import jax
+
+
+class Encoding(Protocol):
+    def num_wires(self) -> int: ...
+    def encode(self, image: jax.Array, wires: list[int]) -> None: ...
+    def decode(self, probabilities: jax.Array) -> jax.Array: ...

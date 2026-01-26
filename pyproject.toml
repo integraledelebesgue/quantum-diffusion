@@ -17,6 +17,7 @@ scripts = [
     "torch>=2.10.0",
     "kornia>=0.8.2",
     "pennylane>=0.44.0",
+    "pennylane-catalyst>=0.14.0",
 ]
 
 [tool.uv.workspace]
