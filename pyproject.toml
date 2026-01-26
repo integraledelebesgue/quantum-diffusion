@@ -1,0 +1,32 @@
+[project]
+name = "quantum-diffusion-research"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.12"
+dependencies = [
+    "quantum-diffusion",
+    "quantum-datasets",
+    "quantum-image-encoding",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+quantum-diffusion = { workspace = true }
+quantum-datasets = { workspace = true }
+quantum-image-encoding = { workspace = true }
+
+[tool.ruff]
+exclude = [".venv"]
+line-length = 140
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+docstring-code-format = true

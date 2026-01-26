@@ -1,0 +1,13 @@
+[project]
+name = "quantum-datasets"
+version = "0.1.0"
+description = ""
+authors = [
+    { name = "Jan Smółka", email = "jp.smolka@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
