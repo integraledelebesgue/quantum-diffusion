@@ -13,6 +13,11 @@ dependencies = [
 dev = [
     "pytest>=9.0.2",
 ]
+scripts = [
+    "torch>=2.10.0",
+    "kornia>=0.8.2",
+    "pennylane>=0.44.0",
+]
 
 [tool.uv.workspace]
 members = ["packages/*"]
