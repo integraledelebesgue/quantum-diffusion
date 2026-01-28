@@ -18,6 +18,9 @@ scripts = [
     "kornia>=0.8.2",
     "pennylane>=0.44.0",
     "pennylane-catalyst>=0.14.0",
+    "tqdm>=4.67.1",
+    "icecream>=2.1.10",
+    "matplotlib>=3.10.8",
 ]
 
 [tool.uv.workspace]
