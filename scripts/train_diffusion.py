@@ -104,8 +104,8 @@ def main() -> None:
         num_layers=16,
         input_shape=(1, 8, 8),
         encoding=quantum_image_encoding.FRQI((1, 8, 8)),
-        device='lightning.qubit',
-        qjit=True,
+        device='default.qubit',
+        qjit=False,
         rngs=rngs,
     )
 
